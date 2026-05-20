@@ -5,6 +5,13 @@ Machine learning-driven Formula 1 race prediction and motorsport analytics platf
 
 ---
 
+## Live Application
+
+https://formula1-race-simulation-x8ajjwdsvf6igouiu4hwf3.streamlit.app/
+
+
+---
+
 ## Overview
 
 F1 AI Predictor is a complete data science and simulation project focused on predicting Formula 1 race outcomes using:
