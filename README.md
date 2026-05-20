@@ -1,60 +1,193 @@
+
 # F1 AI Predictor
 
-A complete Formula 1 prediction project using real session data, feature engineering, machine learning, Monte Carlo simulation, and a Streamlit dashboard.
+Machine learning-driven Formula 1 race prediction and motorsport analytics platform built with Python, telemetry data, Monte Carlo simulation, and interactive dashboards.
 
-## What this project does
+---
 
-The project can:
+## Overview
 
-1. Download real F1 session data using FastF1.
-2. Build a race-prediction dataset from qualifying and race results.
-3. Engineer useful motorsport features such as qualifying gap, grid position, team strength, and recent race form.
-4. Train a machine learning model to predict race finishing position.
-5. Simulate thousands of races with Monte Carlo uncertainty.
-6. Show win, podium, and top-10 probabilities in a dashboard.
+F1 AI Predictor is a complete data science and simulation project focused on predicting Formula 1 race outcomes using:
 
-## Project structure
+* machine learning
+* race simulation
+* telemetry analytics
+* tire degradation modeling
+* probabilistic forecasting
+* strategy optimization
+
+The system combines motorsport engineering concepts with modern ML workflows to estimate:
+
+* finishing order
+* podium probabilities
+* win probabilities
+* race pace evolution
+* optimal tire strategies
+
+---
+
+## Core Features
+
+### Race Prediction Engine
+
+Predicts finishing positions using:
+
+* qualifying pace
+* grid position
+* long-run pace
+* team strength
+* driver rating
+* recent form
+
+Built using:
+
+* Random Forest Regression
+* feature engineering
+* cross-validation
+* ranking analysis
+
+---
+
+### Monte Carlo Simulation
+
+Runs thousands of simulated races to estimate:
+
+* win probability
+* podium probability
+* top-10 probability
+* expected finishing position
+
+The simulation introduces uncertainty through:
+
+* pace variation
+* race randomness
+* degradation variability
+
+---
+
+### Telemetry Analysis
+
+Uses FastF1 telemetry to compare drivers directly.
+
+Includes:
+
+* speed traces
+* distance-based telemetry
+* fastest lap comparison
+* sector performance analysis
+
+Example:
+
+* Verstappen vs Leclerc telemetry comparison
+
+---
+
+### Tire Degradation Modeling
+
+Models tire wear and lap-time evolution over a stint.
+
+Includes:
+
+* degradation slope estimation
+* tire cliff behavior
+* compound comparison
+* pace decay visualization
+
+---
+
+### Race Strategy Optimizer
+
+Simulates complete race strategies.
+
+Supports:
+
+* one-stop strategies
+* two-stop strategies
+* undercut analysis
+* pit-loss simulation
+
+The optimizer evaluates:
+
+* total race time
+* compound effectiveness
+* ideal pit windows
+
+---
+
+### Interactive Dashboard
+
+Built with Streamlit.
+
+Features:
+
+* prediction tables
+* probability visualization
+* telemetry charts
+* race simulation output
+* interactive analytics
+
+---
+
+## Technology Stack
+
+| Category        | Tools                 |
+| --------------- | --------------------- |
+| Language        | Python                |
+| ML              | scikit-learn, XGBoost |
+| Telemetry       | FastF1                |
+| Data Processing | pandas, numpy         |
+| Visualization   | matplotlib, plotly    |
+| Dashboard       | Streamlit             |
+| Simulation      | Monte Carlo methods   |
+
+---
+
+## Project Structure
 
 ```text
 f1_ai_predictor/
+│
 ├── app/
 │   └── dashboard.py
-├── data/
-│   ├── raw/
-│   └── processed/
-├── notebooks/
+│
+├── assets/
+│
+├── cache/
+│
 ├── src/
 │   └── f1predictor/
-│       ├── __init__.py
-│       ├── config.py
 │       ├── data_loader.py
 │       ├── features.py
 │       ├── model.py
 │       ├── simulation.py
 │       ├── visualization.py
-│       └── cli.py
+│       ├── strategy_optimizer.py
+│       └── telemetry/
+│           ├── compare_drivers.py
+│           └── tire_degradation.py
+│
 ├── tests/
+│
 ├── requirements.txt
-├── .env.example
+├── run_all.py
 └── README.md
 ```
 
-## Setup
+---
+
+## Installation
+
+Clone the repository:
 
 ```bash
+git clone https://github.com/YOUR_USERNAME/f1_ai_predictor.git
 cd f1_ai_predictor
-python -m venv venv
 ```
 
-### Windows
+Create virtual environment:
 
 ```bash
-venv\Scripts\activate
-```
-
-### macOS / Linux
-
-```bash
+python3 -m venv venv
 source venv/bin/activate
 ```
 
@@ -64,59 +197,122 @@ Install dependencies:
 pip install -r requirements.txt
 ```
 
-## Quick start
+---
 
-Build a demo dataset:
+## Running the Project
 
-```bash
-python -m src.f1predictor.cli build-demo-data
-```
-
-Train model:
+### Main Prediction Pipeline
 
 ```bash
-python -m src.f1predictor.cli train
+python run_all.py
 ```
 
-Run Monte Carlo simulation:
+---
 
-```bash
-python -m src.f1predictor.cli simulate
-```
-
-Run dashboard:
+### Interactive Dashboard
 
 ```bash
 streamlit run app/dashboard.py
 ```
 
-## Using real FastF1 data
+---
 
-You can build a dataset from real historical races:
+### Telemetry Comparison
 
 ```bash
-python -m src.f1predictor.cli build-fastf1-data --year 2024
+PYTHONPATH=src python src/f1predictor/telemetry/compare_drivers.py
 ```
 
-FastF1 downloads data the first time, so the first run may take longer.
+---
 
-## Scientific notes
+### Tire Degradation Analysis
 
-The model is not claiming deterministic prediction. Race outcomes are stochastic because of safety cars, weather, strategy, pit-stop variance, incidents, and reliability. For that reason, the project predicts a baseline finishing score and then uses Monte Carlo simulation to estimate probability distributions.
+```bash
+PYTHONPATH=src python src/f1predictor/telemetry/tire_degradation.py
+```
 
-Important metrics:
+---
 
-- MAE: average absolute finishing-position error.
-- Spearman correlation: whether the predicted ranking is directionally correct.
-- Win probability: share of simulations where a driver finishes P1.
-- Podium probability: share of simulations where a driver finishes P1-P3.
-- Top-10 probability: share of simulations where a driver finishes P1-P10.
+### Strategy Optimization
 
-## Next improvements
+```bash
+PYTHONPATH=src python src/f1predictor/strategy_optimizer.py
+```
 
-- Add tire degradation models.
-- Add sector-specific telemetry features.
-- Add weather API integration.
-- Add pit-stop strategy optimizer.
-- Add team upgrade trend factor.
-- Add driver-specific wet-weather and street-track ratings.
+---
+
+## Example Outputs
+
+The project generates:
+
+* predicted finishing order
+* Monte Carlo probability tables
+* telemetry comparison plots
+* tire degradation graphs
+* race strategy simulations
+
+Add screenshots inside:
+
+```text
+assets/
+```
+
+and reference them here.
+
+---
+
+## Machine Learning Workflow
+
+The pipeline follows a standard ML workflow:
+
+1. Data ingestion
+2. Feature engineering
+3. Model training
+4. Cross-validation
+5. Prediction generation
+6. Monte Carlo simulation
+7. Visualization
+
+---
+
+## Future Improvements
+
+Planned upgrades:
+
+* live telemetry ingestion
+* weather intelligence
+* reinforcement learning for pit strategy
+* Bayesian race simulation
+* safety car probability model
+* neural-network-based race forecasting
+* real-time live race prediction
+* PostgreSQL telemetry database
+* cloud deployment
+
+---
+
+## Educational Value
+
+This project combines concepts from:
+
+* machine learning
+* statistics
+* simulation
+* motorsport engineering
+* software engineering
+* probability theory
+* data visualization
+
+Suitable for:
+
+* portfolio projects
+* university work
+* undergraduate thesis ideas
+* MSc applications
+* ML/data science showcases
+
+---
+
+## License
+
+MIT License
