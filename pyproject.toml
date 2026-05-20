@@ -1,0 +1,5 @@
+[project]
+name = "f1-ai-predictor"
+version = "0.1.0"
+description = "Formula 1 race prediction with ML and Monte Carlo simulation"
+requires-python = ">=3.10"
