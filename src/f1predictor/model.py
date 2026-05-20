@@ -51,7 +51,7 @@ def train_model(df: pd.DataFrame) -> tuple[Pipeline, dict, pd.DataFrame]:
     pred = model.predict(X.iloc[test_idx])
 
     mae = mean_absolute_error(y.iloc[test_idx], pred)
-    rmse = mean_squared_error(y.iloc[test_idx], pred, squared=False)
+    rmse = mean_squared_error(y.iloc[test_idx], pred) ** 0.5
     rho = spearmanr(y.iloc[test_idx], pred).correlation
 
     metrics = {
