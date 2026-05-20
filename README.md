@@ -289,30 +289,6 @@ Planned upgrades:
 * PostgreSQL telemetry database
 * cloud deployment
 
----
 
-## Educational Value
 
-This project combines concepts from:
 
-* machine learning
-* statistics
-* simulation
-* motorsport engineering
-* software engineering
-* probability theory
-* data visualization
-
-Suitable for:
-
-* portfolio projects
-* university work
-* undergraduate thesis ideas
-* MSc applications
-* ML/data science showcases
-
----
-
-## License
-
-MIT License
