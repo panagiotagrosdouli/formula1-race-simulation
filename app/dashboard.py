@@ -352,42 +352,50 @@ with tab4:
     if run_real:
         gp_names = [x.strip() for x in gp_text.split(",") if x.strip()]
 
-        with st.spinner("Downloading FastF1 data and training model..."):
-            real_df = build_fastf1_dataset(
-                int(year),
-                grand_prix_names=gp_names,
+        try:
+            with st.spinner("Downloading FastF1 data and training model..."):
+                real_df = build_fastf1_dataset(
+                    int(year),
+                    grand_prix_names=gp_names,
+                )
+
+                real_df.to_csv(TRAINING_DATA_PATH, index=False)
+
+                model, metrics, predictions = train_model(real_df)
+
+                sim = monte_carlo_race(
+                    predictions,
+                    n_simulations=n_simulations,
+                    noise_std=noise_std,
+                )
+
+            st.success("Real-data training completed.")
+            st.json(metrics)
+
+            st.subheader("Real FastF1 training dataset")
+
+            st.dataframe(
+                real_df,
+                use_container_width=True,
             )
 
-            real_df.to_csv(TRAINING_DATA_PATH, index=False)
+            st.subheader("Predictions from real-data model")
 
-            model, metrics, predictions = train_model(real_df)
-
-            sim = monte_carlo_race(
+            st.dataframe(
                 predictions,
-                n_simulations=n_simulations,
-                noise_std=noise_std,
+                use_container_width=True,
             )
 
-        st.success("Real-data training completed.")
-        st.json(metrics)
+            st.subheader("Monte Carlo probabilities")
 
-        st.subheader("Real FastF1 training dataset")
+            st.dataframe(
+                sim,
+                use_container_width=True,
+            )
 
-        st.dataframe(
-            real_df,
-            use_container_width=True,
-        )
-
-        st.subheader("Predictions from real-data model")
-
-        st.dataframe(
-            predictions,
-            use_container_width=True,
-        )
-
-        st.subheader("Monte Carlo probabilities")
-
-        st.dataframe(
-            sim,
-            use_container_width=True,
-        )
+        except RuntimeError as exc:
+            st.error(str(exc))
+            st.info(
+                "Try using official FastF1 event names, or leave the GP field empty "
+                "to let FastF1 attempt the available completed events."
+            )
