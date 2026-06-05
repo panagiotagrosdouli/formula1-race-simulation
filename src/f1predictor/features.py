@@ -4,7 +4,7 @@ from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
-
+from .forecast_features import add_rolling_forecast_features
 
 NUMERIC_FEATURES = [
     "QualiTime_s",
@@ -14,6 +14,14 @@ NUMERIC_FEATURES = [
     "TeamStrength",
     "DriverRating",
     "RecentForm",
+
+    # Forecasting features
+    "DriverElo",
+    "TeamElo",
+    "DNFRate",
+    "AvgFinishLast5",
+    "AvgQualiLast5",
+    "PointsLast5",
 ]
 
 CATEGORICAL_FEATURES = [
@@ -31,6 +39,13 @@ def add_fallback_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     out = df.copy()
 
+
+    if "FinishPosition" in out.columns and out["FinishPosition"].notna().any():
+    try:
+        out = add_rolling_forecast_features(out)
+    except Exception:
+        pass
+        
     if "TeamStrength" not in out or out["TeamStrength"].isna().all():
         team_avg = out.groupby("Team")["FinishPosition"].transform("mean")
         out["TeamStrength"] = 1 - (team_avg - team_avg.min()) / max(team_avg.max() - team_avg.min(), 1)
@@ -52,6 +67,22 @@ def add_fallback_features(df: pd.DataFrame) -> pd.DataFrame:
         out["RecentForm"] = out["RecentForm"].fillna(out["FinishPosition"].median())
 
     return out
+
+defaults = {
+    "DriverElo": 1500.0,
+    "TeamElo": 1500.0,
+    "DNFRate": 0.0,
+    "AvgFinishLast5": out["RecentForm"].median() if "RecentForm" in out else 10.5,
+    "AvgQualiLast5": out["GridPosition"].median() if "GridPosition" in out else 10.5,
+    "PointsLast5": 0.0,
+}
+
+for col, value in defaults.items():
+    if col not in out:
+        out[col] = value
+
+    out[col] = out[col].fillna(value)
+
 
 
 def make_preprocessor() -> ColumnTransformer:
