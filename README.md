@@ -1,7 +1,6 @@
+# F1 AI Forecasting Platform
 
-# F1 AI Predictor
-
-Machine learning-driven Formula 1 race prediction and motorsport analytics platform built with Python, telemetry data, Monte Carlo simulation, and interactive dashboards.
+Machine learning-driven Formula 1 forecasting and motorsport analytics platform built with Python, FastF1 telemetry, weather intelligence, Monte Carlo simulation, and interactive dashboards.
 
 ---
 
@@ -9,33 +8,35 @@ Machine learning-driven Formula 1 race prediction and motorsport analytics platf
 
 https://formula1-race-simulation-x8ajjwdsvf6igouiu4hwf3.streamlit.app/
 
-
 ---
 
 ## Overview
 
-F1 AI Predictor is a complete data science and simulation project focused on predicting Formula 1 race outcomes using:
+F1 AI Forecasting Platform is a complete motorsport data science project focused on forecasting Formula 1 race outcomes and championship standings using:
 
 * machine learning
-* race simulation
+* Monte Carlo simulation
+* weather intelligence
 * telemetry analytics
-* tire degradation modeling
-* probabilistic forecasting
-* strategy optimization
+* risk modeling
+* championship forecasting
+* interactive visualization
 
 The system combines motorsport engineering concepts with modern ML workflows to estimate:
 
 * finishing order
-* podium probabilities
 * win probabilities
-* race pace evolution
-* optimal tire strategies
+* podium probabilities
+* top-10 probabilities
+* championship standings
+* race risk
+* weather impact
 
 ---
 
 ## Core Features
 
-### Race Prediction Engine
+### Historical Race Prediction
 
 Predicts finishing positions using:
 
@@ -55,6 +56,25 @@ Built using:
 
 ---
 
+### Future Race Forecasting
+
+Forecasts races that have not yet occurred using:
+
+* Driver Elo ratings
+* Team Elo ratings
+* rolling performance metrics
+* recent form
+* 2026 driver/team priors
+* weather conditions
+
+Outputs:
+
+* predicted finishing order
+* expected finishing position
+* future race outlook
+
+---
+
 ### Monte Carlo Simulation
 
 Runs thousands of simulated races to estimate:
@@ -62,19 +82,72 @@ Runs thousands of simulated races to estimate:
 * win probability
 * podium probability
 * top-10 probability
-* expected finishing position
+* expected finish position
+* median finish position
 
 The simulation introduces uncertainty through:
 
 * pace variation
 * race randomness
-* degradation variability
+* weather variability
+* risk modeling
+
+---
+
+### Driver and Team Elo Ratings
+
+Dynamic ranking system used to estimate competitive strength.
+
+Metrics include:
+
+* DriverElo
+* TeamElo
+
+The ratings evolve according to historical performance and are used for future race forecasting.
+
+---
+
+### Weather Intelligence
+
+Integrates weather information using Open-Meteo.
+
+Weather variables:
+
+* air temperature
+* humidity
+* wind speed
+* rain probability
+
+Weather impacts:
+
+* forecast uncertainty
+* race volatility
+* Monte Carlo variability
+* race risk estimation
+
+---
+
+### Safety Car & DNF Risk Modeling
+
+Estimates race risk using:
+
+* circuit characteristics
+* weather conditions
+* team reliability
+* rookie status
+* historical retirement rates
+
+Outputs:
+
+* Safety Car probability
+* DNF risk
+* risk adjustment score
 
 ---
 
 ### Telemetry Analysis
 
-Uses FastF1 telemetry to compare drivers directly.
+Uses FastF1 telemetry data for driver comparison.
 
 Includes:
 
@@ -102,7 +175,7 @@ Includes:
 
 ---
 
-### Race Strategy Optimizer
+### Race Strategy Optimization
 
 Simulates complete race strategies.
 
@@ -121,63 +194,99 @@ The optimizer evaluates:
 
 ---
 
-### Interactive Dashboard
+### AI Race Analyst
 
-Built with Streamlit.
+Automatically generates race reports including:
 
-Features:
+* projected winner
+* podium outlook
+* weather summary
+* risk assessment
+* probability analysis
 
-* prediction tables
-* probability visualization
-* telemetry charts
-* race simulation output
-* interactive analytics
+The goal is to provide human-readable explanations alongside numerical forecasts.
+
+---
+
+### 2026 Championship Simulator
+
+Simulates the entire Formula 1 season.
+
+Outputs:
+
+#### Drivers Championship
+
+* expected points
+* projected championship position
+
+#### Constructors Championship
+
+* constructor points
+* projected championship position
+
+---
+
+### Real FastF1 Training
+
+Train the platform using real Formula 1 sessions.
+
+Supported data:
+
+* qualifying sessions
+* race sessions
+* official timing information
+* driver performance data
+
+This allows the model to move beyond synthetic demonstration data and use real motorsport datasets.
 
 ---
 
 ## Technology Stack
 
-| Category        | Tools                 |
-| --------------- | --------------------- |
-| Language        | Python                |
-| ML              | scikit-learn, XGBoost |
-| Telemetry       | FastF1                |
-| Data Processing | pandas, numpy         |
-| Visualization   | matplotlib, plotly    |
-| Dashboard       | Streamlit             |
-| Simulation      | Monte Carlo methods   |
+| Category             | Tools                 |
+| -------------------- | --------------------- |
+| Language             | Python                |
+| Machine Learning     | Scikit-Learn, XGBoost |
+| Telemetry            | FastF1                |
+| Data Processing      | Pandas, NumPy         |
+| Visualization        | Plotly, Matplotlib    |
+| Dashboard            | Streamlit             |
+| Weather Intelligence | Open-Meteo            |
+| Simulation           | Monte Carlo Methods   |
 
 ---
 
 ## Project Structure
 
 ```text
-f1_ai_predictor/
-│
-├── app/
-│   └── dashboard.py
-│
-├── assets/
-│
-├── cache/
-│
-├── src/
-│   └── f1predictor/
-│       ├── data_loader.py
-│       ├── features.py
-│       ├── model.py
-│       ├── simulation.py
-│       ├── visualization.py
-│       ├── strategy_optimizer.py
-│       └── telemetry/
-│           ├── compare_drivers.py
-│           └── tire_degradation.py
-│
-├── tests/
-│
-├── requirements.txt
-├── run_all.py
-└── README.md
+formula1-race-simulation/
+
+app/
+└── dashboard.py
+
+src/
+└── f1predictor/
+    ├── data_loader.py
+    ├── features.py
+    ├── model.py
+    ├── simulation.py
+    ├── future_race_predictor.py
+    ├── season_simulator.py
+    ├── weather.py
+    ├── race_risk.py
+    ├── race_analyst.py
+    ├── priors_2026.py
+    ├── visualization.py
+    ├── strategy_optimizer.py
+    └── telemetry/
+        ├── compare_drivers.py
+        └── tire_degradation.py
+
+tests/
+
+requirements.txt
+run_all.py
+README.md
 ```
 
 ---
@@ -187,8 +296,8 @@ f1_ai_predictor/
 Clone the repository:
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/f1_ai_predictor.git
-cd f1_ai_predictor
+git clone https://github.com/panagiotagrosdouli/formula1-race-simulation.git
+cd formula1-race-simulation
 ```
 
 Create virtual environment:
@@ -214,15 +323,11 @@ pip install -r requirements.txt
 python run_all.py
 ```
 
----
-
-### Interactive Dashboard
+### Streamlit Dashboard
 
 ```bash
 streamlit run app/dashboard.py
 ```
-
----
 
 ### Telemetry Comparison
 
@@ -230,15 +335,11 @@ streamlit run app/dashboard.py
 PYTHONPATH=src python src/f1predictor/telemetry/compare_drivers.py
 ```
 
----
-
 ### Tire Degradation Analysis
 
 ```bash
 PYTHONPATH=src python src/f1predictor/telemetry/tire_degradation.py
 ```
-
----
 
 ### Strategy Optimization
 
@@ -248,23 +349,33 @@ PYTHONPATH=src python src/f1predictor/strategy_optimizer.py
 
 ---
 
-## Example Outputs
+## Dashboard Capabilities
 
-The project generates:
+The Streamlit dashboard includes:
 
-* predicted finishing order
-* Monte Carlo probability tables
-* telemetry comparison plots
-* tire degradation graphs
-* race strategy simulations
+### Historical Prediction
 
-Add screenshots inside:
+* model training
+* race prediction
+* probability analysis
 
-```text
-assets/
-```
+### Future Race Forecast
 
-and reference them here.
+* weather-aware forecasting
+* risk modeling
+* AI race analyst
+* race probability estimation
+
+### Championship Simulator
+
+* drivers standings
+* constructors standings
+* season projections
+
+### FastF1 Training
+
+* real Formula 1 datasets
+* historical model training
 
 ---
 
@@ -274,11 +385,29 @@ The pipeline follows a standard ML workflow:
 
 1. Data ingestion
 2. Feature engineering
-3. Model training
+3. Historical model training
 4. Cross-validation
-5. Prediction generation
-6. Monte Carlo simulation
-7. Visualization
+5. Future race forecasting
+6. Risk modeling
+7. Monte Carlo simulation
+8. Championship projection
+9. Visualization
+
+---
+
+## Academic Scope
+
+This project combines concepts from:
+
+* Machine Learning
+* Probability Theory
+* Monte Carlo Methods
+* Statistical Modeling
+* Data Science
+* Motorsport Analytics
+* Engineering Decision Systems
+
+The platform serves as an applied forecasting and analytics framework for Formula 1 race prediction and championship simulation.
 
 ---
 
@@ -286,16 +415,23 @@ The pipeline follows a standard ML workflow:
 
 Planned upgrades:
 
-* live telemetry ingestion
-* weather intelligence
-* reinforcement learning for pit strategy
+* XGBoost model comparison
+* neural-network forecasting
 * Bayesian race simulation
-* safety car probability model
-* neural-network-based race forecasting
-* real-time live race prediction
+* reinforcement learning strategy optimization
+* live telemetry ingestion
+* safety car event simulation
+* tire strategy optimization
+* real-time race prediction
 * PostgreSQL telemetry database
-* cloud deployment
+* cloud-scale deployment
 
+---
 
+## Author
 
+Panagiota Grosdouli
 
+Electrical and Computer Engineering
+
+Machine Learning • Data Science • Telecommunications • Motorsport Analytics
