@@ -433,5 +433,3 @@ Planned upgrades:
 Panagiota Grosdouli
 
 Electrical and Computer Engineering
-
-Machine Learning • Data Science • Telecommunications • Motorsport Analytics
