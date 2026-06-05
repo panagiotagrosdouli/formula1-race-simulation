@@ -21,64 +21,48 @@ class RaceRequest:
 F1_2026_GRID = {
     "RUS": "Mercedes",
     "ANT": "Mercedes",
-
     "LEC": "Ferrari",
     "HAM": "Ferrari",
-
     "NOR": "McLaren",
     "PIA": "McLaren",
-
     "VER": "Red Bull Racing",
     "HAD": "Red Bull Racing",
-
     "ALO": "Aston Martin",
     "STR": "Aston Martin",
-
     "GAS": "Alpine",
     "COL": "Alpine",
-
     "LAW": "Racing Bulls",
     "LIN": "Racing Bulls",
-
     "OCO": "Haas",
     "BEA": "Haas",
-
     "SAI": "Williams",
     "ALB": "Williams",
-
     "HUL": "Audi",
     "BOR": "Audi",
-
     "PER": "Cadillac",
     "BOT": "Cadillac",
 }
 
 
-def build_2026_grid_frame(
-    race_name: str,
-    year: int = 2026,
-    round_no: int = 1,
-) -> pd.DataFrame:
+def build_2026_grid_frame(race_name: str, year: int = 2026, round_no: int = 1) -> pd.DataFrame:
     rows = []
 
     for idx, (driver, team) in enumerate(F1_2026_GRID.items(), start=1):
-        rows.append(
-            {
-                "Year": year,
-                "Round": round_no,
-                "GrandPrix": race_name,
-                "Driver": driver,
-                "Team": team,
-                "QualiTime_s": 90.0 + idx * 0.05,
-                "QualiGapToPole_s": (idx - 1) * 0.05,
-                "GridPosition": idx,
-                "LongRunPace_s": 92.0 + idx * 0.06,
-                "TeamStrength": np.nan,
-                "DriverRating": np.nan,
-                "RecentForm": np.nan,
-                "FinishPosition": np.nan,
-            }
-        )
+        rows.append({
+            "Year": year,
+            "Round": round_no,
+            "GrandPrix": race_name,
+            "Driver": driver,
+            "Team": team,
+            "QualiTime_s": 90.0 + idx * 0.05,
+            "QualiGapToPole_s": (idx - 1) * 0.05,
+            "GridPosition": idx,
+            "LongRunPace_s": 92.0 + idx * 0.06,
+            "TeamStrength": np.nan,
+            "DriverRating": np.nan,
+            "RecentForm": np.nan,
+            "FinishPosition": np.nan,
+        })
 
     return pd.DataFrame(rows)
 
