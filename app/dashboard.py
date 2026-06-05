@@ -241,6 +241,7 @@ with tab2:
         st.plotly_chart(
             plot_predicted_order(forecast),
             use_container_width=True,
+            key="future_predicted_order_chart",
         )
 
         st.subheader("Future race probabilities")
@@ -256,18 +257,21 @@ with tab2:
             st.plotly_chart(
                 plot_probabilities(sim_future, "WinProbability"),
                 use_container_width=True,
+                key="future_win_probability_chart",
             )
 
         with col2:
             st.plotly_chart(
                 plot_probabilities(sim_future, "PodiumProbability"),
                 use_container_width=True,
+                key="future_podium_probability_chart",
             )
 
         with col3:
             st.plotly_chart(
                 plot_probabilities(sim_future, "Top10Probability"),
                 use_container_width=True,
+                key="future_top10_probability_chart",
             )
 
 
