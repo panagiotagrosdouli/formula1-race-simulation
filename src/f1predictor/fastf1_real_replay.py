@@ -8,13 +8,16 @@ import pandas as pd
 def load_fastf1_session_summary(
     year: int,
     gp: str | int,
-    session_name: str = "R"
+    session_name: str = "R",
 ) -> dict[str, pd.DataFrame | str]:
     """
-    Load a real FastF1 session if FastF1 is available.
+    Load a real FastF1 session safely.
 
-    Works both locally and on Streamlit Cloud by automatically
-    creating a cache directory if it does not exist.
+    This version:
+    - creates the FastF1 cache folder automatically
+    - loads laps first
+    - avoids telemetry/weather/messages until the basic loader works
+    - fails gracefully on Streamlit Cloud
     """
 
     try:
@@ -28,7 +31,6 @@ def load_fastf1_session_summary(
         }
 
     try:
-        # Create cache folder automatically
         cache_dir = Path.home() / ".fastf1-cache"
         cache_dir.mkdir(parents=True, exist_ok=True)
 
@@ -37,23 +39,22 @@ def load_fastf1_session_summary(
         session = fastf1.get_session(
             int(year),
             gp,
-            session_name
+            session_name,
         )
 
         session.load(
             laps=True,
-            telemetry=True,
-            weather=True,
-            messages=True
+            telemetry=False,
+            weather=False,
+            messages=False,
         )
 
         laps = session.laps.copy()
 
-        results = (
-            session.results.copy()
-            if getattr(session, "results", None) is not None
-            else pd.DataFrame()
-        )
+        try:
+            results = session.results.copy()
+        except Exception:
+            results = pd.DataFrame()
 
         columns = [
             "Driver",
@@ -70,8 +71,8 @@ def load_fastf1_session_summary(
         ]
 
         available_columns = [
-            c for c in columns
-            if c in laps.columns
+            col for col in columns
+            if col in laps.columns
         ]
 
         lap_summary = (
@@ -94,7 +95,7 @@ def load_fastf1_session_summary(
                 lap_summary[col] = lap_summary[col].astype(str)
 
         return {
-            "status": "Loaded real FastF1 session",
+            "status": "Loaded real FastF1 laps successfully",
             "laps": lap_summary,
             "results": results,
             "telemetry": pd.DataFrame(),
