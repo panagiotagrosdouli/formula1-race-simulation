@@ -13,11 +13,15 @@ from src.f1predictor.data_loader import build_demo_dataset
 from src.f1predictor.driver_profile_dashboard import build_driver_profile, plot_driver_skill_radar, plot_driver_status_animation
 from src.f1predictor.future_race_predictor import forecast_future_race
 from src.f1predictor.live_broadcast import (
+    build_driver_telemetry_snapshot,
+    build_replay_event_stream,
     build_weather_radar,
     detect_drs_and_overtake_alerts,
     estimate_sector_times,
     generate_team_radio,
     generate_tv_commentary,
+    plot_driver_telemetry_trace,
+    plot_selected_lap_track_map,
     plot_track_map_animation,
     plot_weather_radar,
 )
@@ -55,7 +59,7 @@ HUD_CSS = """
     background: linear-gradient(180deg, #080808, #111111);
     border-right: 1px solid rgba(225,6,0,0.35);
 }
-.block-container { padding-top: 1.2rem; max-width: 1600px; }
+.block-container { padding-top: 1.2rem; max-width: 1760px; }
 .hud-title {
     border: 1px solid rgba(225,6,0,0.55);
     background: linear-gradient(90deg, rgba(225,6,0,0.22), rgba(255,255,255,0.04), rgba(225,6,0,0.14));
@@ -96,6 +100,13 @@ HUD_CSS = """
     font-size: 0.78rem;
     font-weight: 700;
     margin-right: 6px;
+}
+.replay-panel {
+    border: 1px solid rgba(225,6,0,0.45);
+    background: rgba(5, 8, 12, 0.78);
+    border-radius: 16px;
+    padding: 14px;
+    margin-bottom: 12px;
 }
 section[data-testid="stTabs"] button { color: #f5f5f5; }
 .stDataFrame, [data-testid="stMetric"] {
@@ -193,11 +204,15 @@ def feed_line(label: str, text: str):
     st.markdown(f"<div class='hud-feed'><span class='hud-badge'>{label}</span>{text}</div>", unsafe_allow_html=True)
 
 
+def clamp_lap(value: int, total_laps: int) -> int:
+    return max(1, min(int(total_laps), int(value)))
+
+
 st.markdown(
     """
     <div class="hud-title">
         <h1>F1 AI Analytics Platform</h1>
-        <p>Machine Learning • Simulation • Telemetry • Race Intelligence • Live Race Control</p>
+        <p>Machine Learning • Simulation • Telemetry • Race Intelligence • Live Race Control • Replay Pro</p>
     </div>
     """,
     unsafe_allow_html=True,
@@ -216,6 +231,7 @@ if build or "hud_state" not in st.session_state:
     with st.spinner("Building F1 command-center state..."):
         st.session_state["hud_state"] = build_hud_state(race_name, int(total_laps), float(pit_loss), float(rain_probability), int(seed))
         st.session_state["hud_lap"] = 1
+        st.session_state["replay_lap"] = 1
 
 state = st.session_state["hud_state"]
 timeline = state["timeline"]
@@ -226,9 +242,14 @@ alerts = state["alerts"]
 radio = state["radio"]
 commentary = state["commentary"]
 director_log = state["director_log"]
+sectors = state["sectors"]
+events = state["events"]
+pitstops = state["pitstops"]
 
-current_lap = st.slider("Live lap selector", 1, int(total_laps), int(st.session_state.get("hud_lap", 1)))
+st.session_state["hud_lap"] = clamp_lap(st.session_state.get("hud_lap", 1), total_laps)
+current_lap = st.slider("Live lap selector", 1, int(total_laps), int(st.session_state["hud_lap"]))
 st.session_state["hud_lap"] = current_lap
+
 lap_df = timeline[timeline["Lap"] == current_lap].sort_values("RacePosition")
 lap_weather = weather_radar[weather_radar["Lap"] == current_lap]
 lap_alerts = alerts[alerts["Lap"] == current_lap] if not alerts.empty else pd.DataFrame()
@@ -245,103 +266,212 @@ with m3: card("LEADER", str(leader), "current P1")
 with m4: card("TRACK GRIP", track_grip, "weather radar")
 with m5: card("DRS / ALERTS", str(len(lap_alerts)), "current lap")
 
-left, center, right = st.columns([1.05, 1.55, 1.05])
+race_control_tab, replay_pro_tab = st.tabs(["🏁 Race Control", "🎮 Replay Pro"])
 
-with left:
-    st.markdown("### Championship / Race Order")
-    order_cols = ["RacePosition", "Driver", "Team", "GapToLeader", "Compound", "PitStops"]
-    order_cols = [c for c in order_cols if c in lap_df.columns]
-    st.dataframe(lap_df[order_cols].head(12), use_container_width=True, hide_index=True)
+with race_control_tab:
+    left, center, right = st.columns([1.05, 1.55, 1.05])
 
-    st.markdown("### Monte Carlo Probabilities")
-    sim = state["simulation"].head(8)
-    if "WinProbability" in sim.columns:
-        st.plotly_chart(plot_probabilities(sim, "WinProbability"), use_container_width=True)
+    with left:
+        st.markdown("### Championship / Race Order")
+        order_cols = ["RacePosition", "Driver", "Team", "GapToLeader", "Compound", "PitStops"]
+        order_cols = [c for c in order_cols if c in lap_df.columns]
+        st.dataframe(lap_df[order_cols].head(12), use_container_width=True, hide_index=True)
 
-    st.markdown("### Race Director")
-    summary = build_steward_summary(director_log)
-    st.dataframe(summary, use_container_width=True, hide_index=True)
-    if not director_log.empty:
-        for _, row in director_log.sort_values("Lap").head(4).iterrows():
-            feed_line(f"LAP {int(row['Lap'])}", row["Message"])
+        st.markdown("### Monte Carlo Probabilities")
+        sim = state["simulation"].head(8)
+        if "WinProbability" in sim.columns:
+            st.plotly_chart(plot_probabilities(sim, "WinProbability"), use_container_width=True)
 
-with center:
-    st.markdown("### Live Track Map")
-    st.plotly_chart(plot_track_map_animation(timeline), use_container_width=True)
+        st.markdown("### Race Director")
+        summary = build_steward_summary(director_log)
+        st.dataframe(summary, use_container_width=True, hide_index=True)
+        if not director_log.empty:
+            for _, row in director_log.sort_values("Lap").head(4).iterrows():
+                feed_line(f"LAP {int(row['Lap'])}", row["Message"])
 
-    st.markdown("### Live Timing")
-    st.plotly_chart(
-        px.bar(
-            lap_df.sort_values("RacePosition"),
-            x="Driver",
-            y="GapToLeader",
-            color="Compound",
-            hover_data=["Team", "RacePosition", "TyreAge", "PitStops", "DNF"],
-            title=f"Gap to Leader — Lap {current_lap}",
-        ),
-        use_container_width=True,
-    )
+    with center:
+        st.markdown("### Live Track Map")
+        st.plotly_chart(plot_track_map_animation(timeline), use_container_width=True)
 
-with right:
-    st.markdown("### Weather Radar")
-    st.plotly_chart(plot_weather_radar(weather_radar[weather_radar["Lap"] <= current_lap]), use_container_width=True)
+        st.markdown("### Live Timing")
+        st.plotly_chart(
+            px.bar(
+                lap_df.sort_values("RacePosition"),
+                x="Driver",
+                y="GapToLeader",
+                color="Compound",
+                hover_data=["Team", "RacePosition", "TyreAge", "PitStops", "DNF"],
+                title=f"Gap to Leader — Lap {current_lap}",
+            ),
+            use_container_width=True,
+        )
 
-    st.markdown("### Team Radio")
-    if lap_radio.empty:
-        feed_line("RADIO", "No team-radio message this lap.")
-    else:
-        for _, msg in lap_radio.head(6).iterrows():
-            feed_line(str(msg["Driver"]), f"{msg['Channel']}: {msg['Message']}")
+    with right:
+        st.markdown("### Weather Radar")
+        st.plotly_chart(plot_weather_radar(weather_radar[weather_radar["Lap"] <= current_lap]), use_container_width=True)
 
-    st.markdown("### TV Broadcast")
-    if lap_commentary.empty:
-        feed_line("TV", "No broadcast line this lap.")
-    else:
-        for _, line in lap_commentary.head(5).iterrows():
-            feed_line("LIVE", line["Commentary"])
+        st.markdown("### Team Radio")
+        if lap_radio.empty:
+            feed_line("RADIO", "No team-radio message this lap.")
+        else:
+            for _, msg in lap_radio.head(6).iterrows():
+                feed_line(str(msg["Driver"]), f"{msg['Channel']}: {msg['Message']}")
 
-    st.markdown("### DRS / Overtake Center")
-    if lap_alerts.empty:
-        feed_line("DRS", "No current DRS or overtake alert.")
-    else:
-        for _, alert in lap_alerts.head(5).iterrows():
-            feed_line(str(alert["Type"]), str(alert["Message"]))
+        st.markdown("### TV Broadcast")
+        if lap_commentary.empty:
+            feed_line("TV", "No broadcast line this lap.")
+        else:
+            for _, line in lap_commentary.head(5).iterrows():
+                feed_line("LIVE", line["Commentary"])
 
-bottom1, bottom2, bottom3 = st.columns([1.1, 1.1, 1.1])
+        st.markdown("### DRS / Overtake Center")
+        if lap_alerts.empty:
+            feed_line("DRS", "No current DRS or overtake alert.")
+        else:
+            for _, alert in lap_alerts.head(5).iterrows():
+                feed_line(str(alert["Type"]), str(alert["Message"]))
 
-with bottom1:
-    st.markdown("### Driver HUD")
-    drivers = sorted(timeline["Driver"].unique())
-    selected_driver = st.selectbox("Select driver", drivers)
-    profile = build_driver_profile(selected_driver, timeline)
-    st.dataframe(profile, use_container_width=True, hide_index=True)
-    st.plotly_chart(plot_driver_skill_radar(selected_driver), use_container_width=True)
-    st.plotly_chart(plot_driver_status_animation(timeline, selected_driver), use_container_width=True)
+    bottom1, bottom2, bottom3 = st.columns([1.1, 1.1, 1.1])
 
-with bottom2:
-    st.markdown("### Team Command Center")
-    teams = sorted(timeline["Team"].dropna().unique())
-    selected_team = st.selectbox("Select team", teams)
-    team_profile = build_team_profile(selected_team, timeline)
-    st.dataframe(team_profile, use_container_width=True, hide_index=True)
-    st.plotly_chart(plot_team_radar(selected_team), use_container_width=True)
-    if not state["team_profiles"].empty:
-        st.plotly_chart(plot_team_comparison(state["team_profiles"]), use_container_width=True)
+    with bottom1:
+        st.markdown("### Driver HUD")
+        drivers = sorted(timeline["Driver"].unique())
+        selected_driver = st.selectbox("Select driver", drivers, key="race_control_driver")
+        profile = build_driver_profile(selected_driver, timeline)
+        st.dataframe(profile, use_container_width=True, hide_index=True)
+        st.plotly_chart(plot_driver_skill_radar(selected_driver), use_container_width=True)
+        st.plotly_chart(plot_driver_status_animation(timeline, selected_driver), use_container_width=True)
 
-with bottom3:
-    st.markdown("### AI Presenter")
-    scripts = build_full_ai_presentation(
-        state,
-        race_name=race_name,
-        lap=current_lap,
-        driver=selected_driver,
-        team=selected_team,
-    )
-    for title, script in scripts.items():
-        feed_line(title.upper(), script)
+    with bottom2:
+        st.markdown("### Team Command Center")
+        teams = sorted(timeline["Team"].dropna().unique())
+        selected_team = st.selectbox("Select team", teams, key="race_control_team")
+        team_profile = build_team_profile(selected_team, timeline)
+        st.dataframe(team_profile, use_container_width=True, hide_index=True)
+        st.plotly_chart(plot_team_radar(selected_team), use_container_width=True)
+        if not state["team_profiles"].empty:
+            st.plotly_chart(plot_team_comparison(state["team_profiles"]), use_container_width=True)
 
-st.markdown("### Final Classification After Steward Review")
-st.dataframe(adjusted_final, use_container_width=True, hide_index=True)
+    with bottom3:
+        st.markdown("### AI Presenter")
+        scripts = build_full_ai_presentation(
+            state,
+            race_name=race_name,
+            lap=current_lap,
+            driver=selected_driver,
+            team=selected_team,
+        )
+        for title, script in scripts.items():
+            feed_line(title.upper(), script)
 
-st.markdown("### Full Race Director Timeline")
-st.plotly_chart(plot_race_director_timeline(director_log), use_container_width=True)
+    st.markdown("### Final Classification After Steward Review")
+    st.dataframe(adjusted_final, use_container_width=True, hide_index=True)
+
+    st.markdown("### Full Race Director Timeline")
+    st.plotly_chart(plot_race_director_timeline(director_log), use_container_width=True)
+
+with replay_pro_tab:
+    st.markdown("<div class='replay-panel'>", unsafe_allow_html=True)
+    st.markdown("### 🎮 Replay Pro Controls")
+    if "replay_lap" not in st.session_state:
+        st.session_state["replay_lap"] = current_lap
+
+    c1, c2, c3, c4, c5, c6 = st.columns(6)
+    with c1:
+        if st.button("⏮ Start", use_container_width=True):
+            st.session_state["replay_lap"] = 1
+    with c2:
+        if st.button("⏪ -5 laps", use_container_width=True):
+            st.session_state["replay_lap"] = clamp_lap(st.session_state["replay_lap"] - 5, total_laps)
+    with c3:
+        if st.button("◀ Previous", use_container_width=True):
+            st.session_state["replay_lap"] = clamp_lap(st.session_state["replay_lap"] - 1, total_laps)
+    with c4:
+        if st.button("Next ▶", use_container_width=True):
+            st.session_state["replay_lap"] = clamp_lap(st.session_state["replay_lap"] + 1, total_laps)
+    with c5:
+        if st.button("+5 laps ⏩", use_container_width=True):
+            st.session_state["replay_lap"] = clamp_lap(st.session_state["replay_lap"] + 5, total_laps)
+    with c6:
+        if st.button("Finish ⏭", use_container_width=True):
+            st.session_state["replay_lap"] = int(total_laps)
+
+    replay_lap = st.slider("Replay lap", 1, int(total_laps), int(st.session_state["replay_lap"]), key="replay_lap_slider")
+    st.session_state["replay_lap"] = replay_lap
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    replay_lap_df = timeline[timeline["Lap"] == replay_lap].sort_values("RacePosition")
+    replay_weather = weather_radar[weather_radar["Lap"] == replay_lap]
+    replay_events = events[events["Lap"] == replay_lap] if not events.empty else pd.DataFrame()
+    sc_active = "SC" in set(replay_lap_df["Event"].astype(str)) if not replay_lap_df.empty else False
+    vsc_active = "VSC" in set(replay_lap_df["Event"].astype(str)) if not replay_lap_df.empty else False
+    rain_active = "RAIN" in set(replay_lap_df["Event"].astype(str)) if not replay_lap_df.empty else False
+    dnf_count = int(replay_lap_df["DNF"].sum()) if "DNF" in replay_lap_df else 0
+    replay_grip = f"{float(replay_weather.iloc[0]['TrackGrip']) * 100:.0f}%" if not replay_weather.empty else "N/A"
+
+    s1, s2, s3, s4, s5 = st.columns(5)
+    with s1: card("REPLAY LAP", f"{replay_lap}/{total_laps}", "scrubbed state")
+    with s2: card("SAFETY CAR", "ACTIVE" if sc_active else "CLEAR", "SC phase marker")
+    with s3: card("VSC", "ACTIVE" if vsc_active else "CLEAR", "virtual safety car")
+    with s4: card("RAIN", "YES" if rain_active else "NO", f"grip {replay_grip}")
+    with s5: card("DNF COUNT", str(dnf_count), "cars out")
+
+    replay_left, replay_center, replay_right = st.columns([1.05, 1.55, 1.05])
+
+    with replay_left:
+        st.markdown("### 🏁 Replay Leaderboard")
+        replay_cols = ["RacePosition", "Driver", "Team", "GapToLeader", "Compound", "TyreAge", "PitStops", "DNF"]
+        replay_cols = [c for c in replay_cols if c in replay_lap_df.columns]
+        st.dataframe(replay_lap_df[replay_cols].head(20), use_container_width=True, hide_index=True)
+
+        st.markdown("### 📰 Replay Event Feed")
+        event_stream = build_replay_event_stream(timeline, pitstops, events, alerts, replay_lap, window=3)
+        if event_stream.empty:
+            feed_line("REPLAY", "No notable events in the current replay window.")
+        else:
+            st.dataframe(event_stream, use_container_width=True, hide_index=True)
+
+    with replay_center:
+        st.markdown("### 🗺 Enhanced Replay Map")
+        st.plotly_chart(plot_selected_lap_track_map(timeline, replay_lap), use_container_width=True)
+
+        st.markdown("### 📺 Broadcast Replay Window")
+        replay_commentary = commentary[commentary["Lap"] == replay_lap] if not commentary.empty else pd.DataFrame()
+        replay_alerts = alerts[alerts["Lap"] == replay_lap] if not alerts.empty else pd.DataFrame()
+        if replay_commentary.empty and replay_alerts.empty:
+            feed_line("BROADCAST", "Quiet lap. Field order is stable.")
+        else:
+            for _, row in replay_commentary.head(4).iterrows():
+                feed_line("LIVE", row["Commentary"])
+            for _, row in replay_alerts.head(4).iterrows():
+                feed_line(str(row["Type"]).upper(), str(row["Message"]))
+
+    with replay_right:
+        st.markdown("### 📡 Driver Telemetry Center")
+        replay_drivers = sorted(timeline["Driver"].unique())
+        replay_driver = st.selectbox("Replay driver", replay_drivers, key="replay_driver")
+        telemetry_snapshot = build_driver_telemetry_snapshot(replay_driver, timeline, sectors, replay_lap)
+        st.dataframe(telemetry_snapshot, use_container_width=True, hide_index=True)
+        st.plotly_chart(plot_driver_telemetry_trace(sectors, timeline, replay_driver, replay_lap), use_container_width=True)
+
+        st.markdown("### 🚨 Safety Car / Race Control Center")
+        if replay_events.empty:
+            feed_line("RACE CONTROL", "Green-flag running on this replay lap.")
+        else:
+            for _, row in replay_events.iterrows():
+                feed_line("RACE CONTROL", f"{row.get('Event', 'EVENT')} logged on lap {int(row['Lap'])}.")
+
+    st.markdown("### 🎥 Broadcast Mode Summary")
+    b1, b2 = st.columns([1.2, 1.8])
+    with b1:
+        st.dataframe(replay_lap_df[[c for c in ["RacePosition", "Driver", "GapToLeader", "Compound", "DNF"] if c in replay_lap_df.columns]].head(10), use_container_width=True, hide_index=True)
+    with b2:
+        scripts = build_full_ai_presentation(
+            state,
+            race_name=race_name,
+            lap=replay_lap,
+            driver=replay_driver,
+            team=replay_lap_df.iloc[0]["Team"] if not replay_lap_df.empty and "Team" in replay_lap_df.columns else "Race Control",
+        )
+        for title, script in scripts.items():
+            feed_line(title.upper(), script)
