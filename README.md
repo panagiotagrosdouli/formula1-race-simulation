@@ -5,7 +5,7 @@ Machine learning-driven Formula 1 forecasting and motorsport analytics platform 
 ---
 
 ## Live Application
-https://formula1-race-simulation-nz94jko7qgwudvabuvgxn6.streamlit.app/
+https://formula1-race-simulation-injvb6zyfjh7kbs6nr4mh5.streamlit.app/
 ---
 
 ## Overview
