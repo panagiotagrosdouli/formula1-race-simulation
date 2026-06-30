@@ -8,85 +8,100 @@ sys.path.append(str(ROOT))
 
 from app.components.theme import card, feed_line, hero, inject_theme, metric_card
 
-st.set_page_config(page_title="F1 AI Race Engineer", layout="wide")
+st.set_page_config(page_title="F1 Decision Support Platform", layout="wide")
 inject_theme()
 
 hero(
-    eyebrow="AI motorsport engineering platform",
-    title="F1 AI Race Engineer",
+    eyebrow="Motorsport decision-support platform",
+    title="Mission Control",
     body=(
-        "A premium Formula 1 forecasting cockpit built with machine learning, Monte Carlo "
-        "simulation, weather intelligence, race-risk modeling, telemetry insights, tire "
-        "degradation analysis, and engineering-grade uncertainty communication."
+        "A professional Formula 1 forecasting environment for race analysis, probabilistic simulation, "
+        "telemetry review, tyre degradation, weather risk, and model validation. The platform is designed "
+        "to help users understand uncertainty and evaluate race scenarios with engineering discipline."
     ),
 )
 
-m1, m2, m3, m4 = st.columns(4)
-with m1:
-    metric_card("Forecast engine", "ML + simulation", "Race outcome modelling")
-with m2:
-    metric_card("Race outputs", "Win / Podium / Top 10", "Probability-first results")
-with m3:
-    metric_card("Risk layer", "Weather + DNF + SC", "Volatility-aware forecasting")
-with m4:
-    metric_card("Experience", "Product UX", "Not a generic dashboard")
+status_1, status_2, status_3, status_4 = st.columns(4)
+with status_1:
+    metric_card("Forecast engine", "Operational", "Machine learning workflow available")
+with status_2:
+    metric_card("Monte Carlo", "Ready", "Probability simulation layer")
+with status_3:
+    metric_card("Telemetry", "Available", "FastF1 analysis modules")
+with status_4:
+    metric_card("Weather model", "Connected", "Risk-aware forecast inputs")
 
-st.markdown("## What the platform does")
+st.markdown("## Current platform capabilities")
 
-c1, c2, c3 = st.columns(3)
-with c1:
+cap_1, cap_2, cap_3 = st.columns(3)
+with cap_1:
     card(
-        "🏁 Race Forecasting",
-        "Predict finishing order using pace, grid position, driver form, team strength, and race-specific context.",
+        "Race Forecast Workspace",
+        "Forecast finishing order, expected position, win probability, podium probability, top-10 probability, and race risk using the existing predictive model and simulation stack.",
     )
-with c2:
+with cap_2:
     card(
-        "🎲 Probabilistic Simulation",
-        "Run stochastic race scenarios to estimate expected finish, win probability, podium probability, and top-10 probability.",
+        "Simulation and Uncertainty",
+        "Use Monte Carlo simulation to move beyond a single deterministic result and communicate probability distributions across race outcomes.",
     )
-with c3:
+with cap_3:
     card(
-        "🧠 Engineering Interpretation",
-        "Turn model outputs into decision-support insight with strategy, risk, uncertainty, and scientific limitations.",
+        "Telemetry Workstation",
+        "Compare speed traces, driver controls, tyre behaviour, and performance signatures using FastF1-backed telemetry workflows.",
     )
 
-c4, c5, c6 = st.columns(3)
-with c4:
+cap_4, cap_5, cap_6 = st.columns(3)
+with cap_4:
     card(
-        "🌦️ Weather Intelligence",
-        "Account for rain probability, air temperature, humidity, wind, and changing race volatility.",
+        "Weather Intelligence",
+        "Represent rain probability, temperature, humidity, and volatility as uncertainty inputs rather than pretending conditions are certain.",
     )
-with c5:
+with cap_5:
     card(
-        "📡 Telemetry Thinking",
-        "Compare speed traces, driver controls, tire degradation, and performance signatures from racing data.",
+        "Championship Projection",
+        "Extend race-level forecasts into season-level driver and constructor probability estimates with clear scenario interpretation.",
     )
-with c6:
+with cap_6:
     card(
-        "🏆 Championship Projection",
-        "Extend single-race forecasting into season-level driver and constructor title probability estimates.",
+        "Model Validation",
+        "Surface validation metrics, feature behaviour, and diagnostic views so the system remains scientifically credible and transparent.",
     )
 
 st.markdown("## Engineering workflow")
-feed_line("01", "Ingest race context: event, grid, pace, weather, driver/team strength, and historical form.")
-feed_line("02", "Predict baseline order with supervised ML and convert scores into race-ranking insight.")
-feed_line("03", "Simulate uncertainty with Monte Carlo scenarios, reliability effects, and volatility assumptions.")
-feed_line("04", "Interpret results like an engineer: risk, tires, safety cars, strategy, and probability limits.")
-feed_line("05", "Present the system as a polished technical product for motorsport, ML, and portfolio review.")
+feed_line("01", "Select a race context: season, event, weather assumptions, and simulation settings.")
+feed_line("02", "Execute a forecast using the existing model and race context features.")
+feed_line("03", "Run Monte Carlo simulation to estimate uncertainty and probability distributions.")
+feed_line("04", "Review risk factors including weather, DNF exposure, safety-car volatility, and tyre behaviour.")
+feed_line("05", "Interpret the output through an engineering assessment rather than a single headline result.")
+
+st.markdown("## Quick actions")
+action_1, action_2, action_3, action_4 = st.columns(4)
+with action_1:
+    st.page_link("app/dashboard.py", label="Open main forecast dashboard")
+with action_2:
+    st.page_link("app/pages/1_Telemetry_Lab.py", label="Open telemetry workspace")
+with action_3:
+    st.page_link("app/pages/2_Strategy_Lab.py", label="Open strategy workspace")
+with action_4:
+    st.page_link("app/pages/7_Model_Evaluation.py", label="Open model validation")
 
 st.divider()
 
-left, right = st.columns([1.2, 0.8])
+left, right = st.columns([1.15, 0.85])
 with left:
-    st.subheader("Why it feels like a real AI product")
+    st.subheader("Product standard")
     st.write(
-        "The interface is organized around user outcomes: run forecasts, inspect probabilities, "
-        "understand risk, review telemetry, and communicate uncertainty. The model stays honest "
-        "by presenting predictions as probabilistic rather than guaranteed."
+        "This application should feel like a professional decision-support platform: calm, readable, "
+        "workflow-driven, and scientifically honest. Forecasts are probabilistic estimates, not guarantees. "
+        "The interface should help users understand what the model says, why uncertainty remains, and what "
+        "engineering factors deserve attention."
     )
 with right:
-    st.info(
-        "Next step: apply this same shared theme to the main dashboard and the race-engineering pages."
+    st.subheader("Implementation direction")
+    st.write(
+        "Next development work should upgrade one workflow at a time: Race Forecast, Simulation, Telemetry, "
+        "Tyre Analysis, Weather Intelligence, Championship, and Model Performance. Backend logic should remain "
+        "stable unless a specific correctness or architecture issue is identified."
     )
 
-st.success("Premium Streamlit product experience: unified, modular, and ready for page-by-page upgrades.")
+st.success("Mission Control is now the professional entry point for the Formula 1 decision-support platform.")
