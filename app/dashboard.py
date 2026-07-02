@@ -12,7 +12,7 @@ from src.f1predictor.championship_probability import (
     calculate_constructor_title_probabilities,
     calculate_title_probabilities,
 )
-from src.f1predictor.config import TRAINING_DATA_PATH, PREDICTIONS_PATH, SIMULATION_PATH
+from src.f1predictor.config import PREDICTIONS_PATH, SIMULATION_PATH, TRAINING_DATA_PATH
 from src.f1predictor.data_loader import build_demo_dataset, build_fastf1_dataset
 from src.f1predictor.future_race_predictor import forecast_future_race
 from src.f1predictor.model import train_model
@@ -32,15 +32,271 @@ from src.f1predictor.telemetry.streamlit_insights import (
 from src.f1predictor.visualization import plot_predicted_order, plot_probabilities
 
 
-st.set_page_config(page_title="F1 AI Forecasting Platform", layout="wide")
-
-st.title("🏎️ F1 AI Forecasting Platform")
-st.write(
-    "Machine-learning Formula 1 race forecasting, Monte Carlo uncertainty analysis, "
-    "weather-aware risk modeling, telemetry analytics, tire degradation, and championship projection."
+st.set_page_config(
+    page_title="F1 Race Engineering Intelligence",
+    page_icon="🏎️",
+    layout="wide",
+    initial_sidebar_state="expanded",
 )
 
+
+RACE_OPTIONS_2026 = [
+    "Australian Grand Prix 2026",
+    "Chinese Grand Prix 2026",
+    "Japanese Grand Prix 2026",
+    "Bahrain Grand Prix 2026",
+    "Saudi Arabian Grand Prix 2026",
+    "Miami Grand Prix 2026",
+    "Monaco Grand Prix 2026",
+    "Canadian Grand Prix 2026",
+    "Spanish Grand Prix 2026",
+    "Austrian Grand Prix 2026",
+    "British Grand Prix 2026",
+    "Belgian Grand Prix 2026",
+    "Hungarian Grand Prix 2026",
+    "Italian Grand Prix 2026",
+    "Singapore Grand Prix 2026",
+    "United States Grand Prix 2026",
+    "Mexico City Grand Prix 2026",
+    "São Paulo Grand Prix 2026",
+    "Las Vegas Grand Prix 2026",
+    "Qatar Grand Prix 2026",
+    "Abu Dhabi Grand Prix 2026",
+]
+
+
+def inject_css() -> None:
+    st.markdown(
+        """
+        <style>
+        .main {
+            background: radial-gradient(circle at top left, #1f2937 0, #0b0f19 38%, #05070d 100%);
+        }
+        .block-container {
+            padding-top: 1.4rem;
+            padding-bottom: 2rem;
+            max-width: 1500px;
+        }
+        h1, h2, h3 {
+            letter-spacing: -0.03em;
+        }
+        .hero {
+            border: 1px solid rgba(255,255,255,0.12);
+            border-radius: 24px;
+            padding: 28px 30px;
+            background: linear-gradient(135deg, rgba(220, 38, 38, 0.18), rgba(15, 23, 42, 0.92));
+            box-shadow: 0 24px 70px rgba(0,0,0,0.35);
+            margin-bottom: 1.1rem;
+        }
+        .hero h1 {
+            margin: 0;
+            font-size: 2.45rem;
+            color: #ffffff;
+        }
+        .hero p {
+            margin-top: 0.75rem;
+            max-width: 980px;
+            color: #d1d5db;
+            font-size: 1.03rem;
+            line-height: 1.65;
+        }
+        .badge-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.55rem;
+            margin-top: 1rem;
+        }
+        .badge {
+            border-radius: 999px;
+            padding: 0.32rem 0.72rem;
+            background: rgba(255,255,255,0.09);
+            border: 1px solid rgba(255,255,255,0.12);
+            color: #f9fafb;
+            font-size: 0.82rem;
+        }
+        .panel {
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 18px;
+            padding: 18px 20px;
+            background: rgba(15, 23, 42, 0.72);
+            margin: 0.6rem 0 1rem 0;
+        }
+        .panel h3 {
+            margin-top: 0;
+            color: #ffffff;
+        }
+        .panel p, .panel li {
+            color: #d1d5db;
+        }
+        div[data-testid="stMetric"] {
+            border: 1px solid rgba(255,255,255,0.10);
+            border-radius: 16px;
+            padding: 14px 16px;
+            background: rgba(15, 23, 42, 0.78);
+        }
+        div[data-testid="stMetricLabel"] {
+            color: #9ca3af;
+        }
+        div[data-testid="stMetricValue"] {
+            color: #ffffff;
+        }
+        .small-note {
+            color: #9ca3af;
+            font-size: 0.9rem;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def hero() -> None:
+    st.markdown(
+        """
+        <div class="hero">
+            <h1>🏎️ F1 Race Engineering Intelligence Platform</h1>
+            <p>
+                Machine-learning forecasting, Monte Carlo race uncertainty, weather-aware risk,
+                telemetry comparison, tyre degradation and championship simulation in one decision
+                dashboard. Designed for students, data scientists, race strategists and motorsport
+                engineers who need both the prediction and the reasoning behind it.
+            </p>
+            <div class="badge-row">
+                <span class="badge">Race forecast</span>
+                <span class="badge">Monte Carlo uncertainty</span>
+                <span class="badge">FastF1 telemetry</span>
+                <span class="badge">Weather risk</span>
+                <span class="badge">Tyre degradation</span>
+                <span class="badge">Championship simulation</span>
+                <span class="badge">Engineering decision support</span>
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def engineering_panel(title: str, body: str) -> None:
+    st.markdown(
+        f"""
+        <div class="panel">
+            <h3>{title}</h3>
+            <p>{body}</p>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
+def probability_to_percent(df: pd.DataFrame, columns: list[str]) -> pd.DataFrame:
+    out = df.copy()
+    for col in columns:
+        if col in out.columns:
+            out[col] = (out[col].astype(float) * 100).round(2)
+    return out
+
+
+def format_prediction_table(df: pd.DataFrame) -> pd.DataFrame:
+    priority_cols = [
+        "PredictedRank",
+        "Driver",
+        "Team",
+        "PredictedFinishPosition",
+        "GridPosition",
+        "QualiGapToPole_s",
+        "LongRunPace_s",
+        "TeamStrength",
+        "DriverRating",
+        "RecentForm",
+        "RainProbability",
+        "DNFRisk",
+        "SafetyCarProbability",
+        "RiskAdjustment",
+    ]
+    cols = [col for col in priority_cols if col in df.columns]
+    return df[cols].copy() if cols else df.copy()
+
+
+def show_probability_cards(sim: pd.DataFrame) -> None:
+    if sim.empty:
+        st.warning("No simulation output is available yet.")
+        return
+
+    leader = sim.sort_values("WinProbability", ascending=False).iloc[0]
+    podium = sim.sort_values("PodiumProbability", ascending=False).iloc[0]
+    consistency = sim.sort_values("ExpectedFinish", ascending=True).iloc[0]
+    top10 = sim.sort_values("Top10Probability", ascending=False).iloc[0]
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Most likely winner", leader["Driver"], f"{leader['WinProbability'] * 100:.1f}% win")
+    c2.metric("Best podium chance", podium["Driver"], f"{podium['PodiumProbability'] * 100:.1f}% podium")
+    c3.metric("Best expected finish", consistency["Driver"], f"P{consistency['ExpectedFinish']:.2f}")
+    c4.metric("Most secure Top 10", top10["Driver"], f"{top10['Top10Probability'] * 100:.1f}% top 10")
+
+
+def show_model_summary(metrics: dict | None) -> None:
+    if not metrics:
+        st.info("Run a training workflow to generate validation metrics.")
+        return
+
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("MAE", metrics.get("MAE", "N/A"))
+    c2.metric("RMSE", metrics.get("RMSE", "N/A"))
+    c3.metric("Rank correlation", metrics.get("SpearmanRankCorrelation", "N/A"))
+    c4.metric("Test rows", metrics.get("TestRows", "N/A"))
+
+    engineering_panel(
+        "How to read these diagnostics",
+        "MAE/RMSE measure finishing-position error, while Spearman correlation measures whether "
+        "the model preserves the correct ranking order. For race engineering decisions, ranking "
+        "quality is often more informative than absolute position error.",
+    )
+
+
+def show_downloads(name: str, df: pd.DataFrame) -> None:
+    st.download_button(
+        label=f"Download {name} CSV",
+        data=df.to_csv(index=False).encode("utf-8"),
+        file_name=f"{name.lower().replace(' ', '_')}.csv",
+        mime="text/csv",
+    )
+
+
+inject_css()
+hero()
+
+with st.sidebar:
+    st.header("Race control")
+
+    st.caption("Global simulation parameters")
+    n_simulations = st.slider(
+        "Monte Carlo simulations",
+        1000,
+        50000,
+        10000,
+        step=1000,
+        help="Higher values make probability estimates more stable but slower.",
+    )
+
+    noise_std = st.slider(
+        "Race uncertainty",
+        0.5,
+        5.0,
+        2.0,
+        step=0.1,
+        help="Controls random variation around the model's central prediction.",
+    )
+
+    st.divider()
+    st.caption("Interpretation")
+    st.info(
+        "Use this as a decision-support platform: forecasts are probabilistic, not deterministic. "
+        "For scientific work, prefer real FastF1 training and backtesting over demo data."
+    )
+
+
 (
+    tab_overview,
     tab1,
     tab2,
     tab3,
@@ -50,40 +306,65 @@ st.write(
     tab7,
 ) = st.tabs(
     [
-        "Historical prediction",
+        "Command centre",
+        "Historical model",
         "Future race forecast",
         "Season simulator",
         "Real FastF1 training",
         "Telemetry insights",
-        "Tire degradation",
+        "Tyre degradation",
         "Model diagnostics",
     ]
 )
 
-with st.sidebar:
-    st.header("Global controls")
 
-    n_simulations = st.slider(
-        "Monte Carlo simulations",
-        1000,
-        50000,
-        10000,
-        step=1000,
+with tab_overview:
+    st.subheader("Command centre")
+
+    engineering_panel(
+        "From prediction to engineering decision",
+        "The platform separates three layers: model forecast, probabilistic race simulation and "
+        "engineering interpretation. This makes the dashboard useful both for general viewers and "
+        "for technically demanding motorsport analysis.",
     )
 
-    noise_std = st.slider(
-        "Race uncertainty",
-        0.5,
-        5.0,
-        2.0,
-        step=0.1,
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Forecast engine", "ML + priors")
+    c2.metric("Uncertainty layer", "Monte Carlo")
+    c3.metric("Telemetry layer", "FastF1")
+    c4.metric("Decision layer", "Risk + strategy")
+
+    st.markdown("### Workflow map")
+    st.markdown(
+        """
+        1. **Train or load data** — synthetic demo for instant use, FastF1 data for scientific analysis.
+        2. **Predict race order** — estimate expected finishing position and rank.
+        3. **Simulate uncertainty** — convert central forecasts into win, podium and top-10 probabilities.
+        4. **Inspect engineering context** — weather, DNF risk, safety-car exposure, tyre degradation and telemetry.
+        5. **Export results** — download tables for reports, notebooks or presentations.
+        """
     )
+
+    if PREDICTIONS_PATH.exists() and SIMULATION_PATH.exists():
+        predictions = pd.read_csv(PREDICTIONS_PATH)
+        sim = pd.read_csv(SIMULATION_PATH)
+        st.markdown("### Latest available run")
+        show_probability_cards(sim)
+        st.dataframe(format_prediction_table(predictions.tail(20)), use_container_width=True)
+    else:
+        st.info("Run the historical pipeline or a future race forecast to populate the command centre.")
 
 
 with tab1:
-    st.subheader("Historical prediction pipeline")
+    st.subheader("Historical model")
 
-    run_demo = st.button("Build demo data + train + simulate")
+    engineering_panel(
+        "Purpose",
+        "Train a baseline race-outcome model and convert the prediction into an uncertainty-aware "
+        "probability table. This is the fastest way to demonstrate the full pipeline.",
+    )
+
+    run_demo = st.button("Build demo data + train + simulate", type="primary")
 
     if run_demo or not PREDICTIONS_PATH.exists() or not SIMULATION_PATH.exists():
         df = build_demo_dataset()
@@ -99,25 +380,34 @@ with tab1:
         )
 
         st.success("Pipeline completed.")
-        st.json(metrics)
-
+        show_model_summary(metrics)
     else:
         predictions = pd.read_csv(PREDICTIONS_PATH)
         sim = pd.read_csv(SIMULATION_PATH)
+        metrics = None
 
     latest_gp = predictions["GrandPrix"].iloc[-1]
 
     latest_predictions = (
         predictions[predictions["GrandPrix"] == latest_gp]
         .sort_values("PredictedRank")
+        .reset_index(drop=True)
     )
 
-    st.subheader(f"Predicted order — {latest_gp}")
-    st.dataframe(latest_predictions, use_container_width=True)
+    st.markdown(f"### Predicted order — {latest_gp}")
+    show_probability_cards(sim)
+
+    st.dataframe(format_prediction_table(latest_predictions), use_container_width=True)
+    show_downloads("historical_predictions", latest_predictions)
     st.plotly_chart(plot_predicted_order(latest_predictions), use_container_width=True)
 
-    st.subheader("Monte Carlo probabilities")
-    st.dataframe(sim, use_container_width=True)
+    st.markdown("### Monte Carlo probabilities")
+    sim_display = probability_to_percent(
+        sim,
+        ["WinProbability", "PodiumProbability", "Top10Probability"],
+    )
+    st.dataframe(sim_display, use_container_width=True)
+    show_downloads("monte_carlo_probabilities", sim)
 
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -130,43 +420,20 @@ with tab1:
 
 with tab2:
     st.subheader("Future race forecast")
-    st.write(
-        "Forecast a future Formula 1 race using driver/team priors, Elo-style strength, "
-        "recent form, weather uncertainty, safety-car risk, DNF risk, and Monte Carlo simulation."
+
+    engineering_panel(
+        "Race-engineering forecast",
+        "Forecast a future Formula 1 race using driver/team priors, rolling form, weather uncertainty, "
+        "safety-car risk, DNF risk and Monte Carlo simulation. The output is designed like a pre-race "
+        "briefing: likely winner, podium threats, risk exposure and downloadable decision tables.",
     )
 
-    race_name = st.selectbox(
-        "Future race",
-        [
-            "Australian Grand Prix 2026",
-            "Chinese Grand Prix 2026",
-            "Japanese Grand Prix 2026",
-            "Bahrain Grand Prix 2026",
-            "Saudi Arabian Grand Prix 2026",
-            "Miami Grand Prix 2026",
-            "Monaco Grand Prix 2026",
-            "Canadian Grand Prix 2026",
-            "Spanish Grand Prix 2026",
-            "Austrian Grand Prix 2026",
-            "British Grand Prix 2026",
-            "Belgian Grand Prix 2026",
-            "Hungarian Grand Prix 2026",
-            "Italian Grand Prix 2026",
-            "Singapore Grand Prix 2026",
-            "United States Grand Prix 2026",
-            "Mexico City Grand Prix 2026",
-            "São Paulo Grand Prix 2026",
-            "Las Vegas Grand Prix 2026",
-            "Qatar Grand Prix 2026",
-            "Abu Dhabi Grand Prix 2026",
-        ],
-        index=11,
-    )
+    c1, c2, c3 = st.columns([2, 1, 1])
+    race_name = c1.selectbox("Future race", RACE_OPTIONS_2026, index=11)
+    round_no = c2.number_input("Round number", min_value=1, max_value=30, value=12)
+    race_date = c3.text_input("Race date for live weather API", "", placeholder="YYYY-MM-DD")
 
-    round_no = st.number_input("Round number", min_value=1, max_value=30, value=12)
-    race_date = st.text_input("Race date for live weather API (optional, YYYY-MM-DD)", "")
-
-    run_forecast = st.button("Forecast selected race")
+    run_forecast = st.button("Forecast selected race", type="primary")
 
     if run_forecast:
         df = build_demo_dataset()
@@ -184,8 +451,10 @@ with tab2:
         forecast = result["forecast"]
         sim_future = result["simulation"]
         weather = result["weather"]
+        metrics = result.get("metrics")
 
         st.success("Future race forecast completed.")
+        show_model_summary(metrics)
 
         c1, c2, c3, c4 = st.columns(4)
         c1.metric("Weather", weather.condition)
@@ -193,8 +462,10 @@ with tab2:
         c3.metric("Air temperature", f"{weather.air_temperature:.1f} °C")
         c4.metric("Humidity", f"{weather.humidity:.1f}%")
 
+        show_probability_cards(sim_future)
+
         report = generate_race_report(forecast=forecast, simulation=sim_future, weather=weather)
-        st.subheader("AI Race Analyst")
+        st.markdown("### Race analyst briefing")
         st.info(report)
 
         risk_cols = [
@@ -205,17 +476,23 @@ with tab2:
             "RiskAdjustment",
             "PredictedWeatherAdjustment",
         ]
-        visible_risk_cols = [c for c in risk_cols if c in forecast.columns]
+        visible_risk_cols = [col for col in risk_cols if col in forecast.columns]
 
-        st.subheader("Risk model")
+        st.markdown("### Risk model")
         st.dataframe(forecast[visible_risk_cols], use_container_width=True)
 
-        st.subheader("Predicted future finishing order")
-        st.dataframe(forecast, use_container_width=True)
+        st.markdown("### Predicted future finishing order")
+        st.dataframe(format_prediction_table(forecast), use_container_width=True)
+        show_downloads("future_race_forecast", forecast)
         st.plotly_chart(plot_predicted_order(forecast), use_container_width=True)
 
-        st.subheader("Future race probabilities")
-        st.dataframe(sim_future, use_container_width=True)
+        st.markdown("### Future race probabilities")
+        sim_future_display = probability_to_percent(
+            sim_future,
+            ["WinProbability", "PodiumProbability", "Top10Probability"],
+        )
+        st.dataframe(sim_future_display, use_container_width=True)
+        show_downloads("future_race_probabilities", sim_future)
 
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -228,9 +505,11 @@ with tab2:
 
 with tab3:
     st.subheader("2026 Championship Simulator")
-    st.write(
-        "Simulate a full season using the race-forecasting engine, expected points, "
-        "constructor aggregation, and normalized title-probability estimates."
+
+    engineering_panel(
+        "Season-level simulation",
+        "Race probabilities are aggregated across the calendar to estimate championship outcomes. "
+        "This is useful for strategic scenario analysis, not just single-race prediction.",
     )
 
     season_runs = st.slider(
@@ -241,7 +520,7 @@ with tab3:
         step=500,
     )
 
-    run_season = st.button("Run 2026 Championship Simulation")
+    run_season = st.button("Run 2026 Championship Simulation", type="primary")
 
     if run_season:
         df = build_demo_dataset()
@@ -256,41 +535,49 @@ with tab3:
 
         st.success("Season simulation completed.")
 
-        st.subheader("Driver title probabilities")
-        st.dataframe(driver_probs, use_container_width=True)
-        st.plotly_chart(
-            px.bar(
-                driver_probs.head(10),
-                x="Driver",
-                y="ChampionshipProbability",
-                hover_data=["Team", "ExpectedPoints", "ProjectedPosition"],
-                title="Driver championship probability (%)",
-            ),
-            use_container_width=True,
-        )
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("### Driver title probabilities")
+            st.dataframe(driver_probs, use_container_width=True)
+            st.plotly_chart(
+                px.bar(
+                    driver_probs.head(10),
+                    x="Driver",
+                    y="ChampionshipProbability",
+                    hover_data=["Team", "ExpectedPoints", "ProjectedPosition"],
+                    title="Driver championship probability (%)",
+                ),
+                use_container_width=True,
+            )
+            show_downloads("driver_title_probabilities", driver_probs)
 
-        st.subheader("Constructor title probabilities")
-        st.dataframe(constructor_probs, use_container_width=True)
-        st.plotly_chart(
-            px.bar(
-                constructor_probs,
-                x="Team",
-                y="ChampionshipProbability",
-                hover_data=["ConstructorExpectedPoints", "ProjectedPosition"],
-                title="Constructor championship probability (%)",
-            ),
-            use_container_width=True,
-        )
+        with c2:
+            st.markdown("### Constructor title probabilities")
+            st.dataframe(constructor_probs, use_container_width=True)
+            st.plotly_chart(
+                px.bar(
+                    constructor_probs,
+                    x="Team",
+                    y="ChampionshipProbability",
+                    hover_data=["ConstructorExpectedPoints", "ProjectedPosition"],
+                    title="Constructor championship probability (%)",
+                ),
+                use_container_width=True,
+            )
+            show_downloads("constructor_title_probabilities", constructor_probs)
 
-        st.subheader("Race-by-race driver table")
+        st.markdown("### Race-by-race driver table")
         st.dataframe(season["driver_race_table"], use_container_width=True)
+        show_downloads("race_by_race_driver_table", season["driver_race_table"])
 
 
 with tab4:
     st.subheader("Real FastF1 training")
-    st.write(
-        "Download real FastF1 qualifying/race results and train the model on historical data. "
-        "The first run may take longer because FastF1 downloads and caches sessions."
+
+    engineering_panel(
+        "Scientific upgrade path",
+        "Use real qualifying and race sessions through FastF1. This is the recommended mode for "
+        "academic reports, model validation and motorsport analytics beyond a demo dataset.",
     )
 
     year = st.number_input("Training year", min_value=2018, max_value=2026, value=2024)
@@ -299,7 +586,7 @@ with tab4:
         "Bahrain, Saudi Arabia, Australia, Japan, China, Miami",
     )
 
-    run_real = st.button("Build real FastF1 dataset + train")
+    run_real = st.button("Build real FastF1 dataset + train", type="primary")
 
     if run_real:
         gp_names = [x.strip() for x in gp_text.split(",") if x.strip()]
@@ -313,13 +600,22 @@ with tab4:
                 sim = monte_carlo_race(predictions, n_simulations=n_simulations, noise_std=noise_std)
 
             st.success("Real-data training completed.")
-            st.json(metrics)
-            st.subheader("Real FastF1 training dataset")
+            show_model_summary(metrics)
+
+            st.markdown("### Real FastF1 training dataset")
             st.dataframe(real_df, use_container_width=True)
-            st.subheader("Predictions from real-data model")
-            st.dataframe(predictions, use_container_width=True)
-            st.subheader("Monte Carlo probabilities")
-            st.dataframe(sim, use_container_width=True)
+            show_downloads("real_fastf1_training_dataset", real_df)
+
+            st.markdown("### Predictions from real-data model")
+            st.dataframe(format_prediction_table(predictions), use_container_width=True)
+            show_downloads("real_data_predictions", predictions)
+
+            st.markdown("### Monte Carlo probabilities")
+            st.dataframe(
+                probability_to_percent(sim, ["WinProbability", "PodiumProbability", "Top10Probability"]),
+                use_container_width=True,
+            )
+            show_downloads("real_data_probabilities", sim)
 
         except RuntimeError as exc:
             st.error(str(exc))
@@ -331,8 +627,11 @@ with tab4:
 
 with tab5:
     st.subheader("Telemetry insights")
-    st.write(
-        "Compare fastest-lap telemetry between two drivers using FastF1 speed, throttle, brake, gear, DRS, and RPM channels."
+
+    engineering_panel(
+        "Driver telemetry comparison",
+        "Compare fastest-lap telemetry between two drivers using speed, throttle, brake, gear, DRS "
+        "and RPM channels. This helps connect model output with on-track driving evidence.",
     )
 
     c1, c2, c3, c4 = st.columns(4)
@@ -345,15 +644,24 @@ with tab5:
     driver_a = d1.text_input("Driver A", "VER").upper()
     driver_b = d2.text_input("Driver B", "LEC").upper()
 
-    if st.button("Compare driver telemetry"):
+    if st.button("Compare driver telemetry", type="primary"):
         try:
             with st.spinner("Loading FastF1 telemetry..."):
                 telemetry_a = load_fastest_lap_telemetry(int(tel_year), tel_gp, tel_session, driver_a)
                 telemetry_b = load_fastest_lap_telemetry(int(tel_year), tel_gp, tel_session, driver_b)
 
-            m1, m2 = st.columns(2)
-            m1.metric(f"{driver_a} fastest lap", f"{telemetry_a.lap_time_seconds:.3f}s" if telemetry_a.lap_time_seconds else "N/A")
-            m2.metric(f"{driver_b} fastest lap", f"{telemetry_b.lap_time_seconds:.3f}s" if telemetry_b.lap_time_seconds else "N/A")
+            m1, m2, m3 = st.columns(3)
+            m1.metric(
+                f"{driver_a} fastest lap",
+                f"{telemetry_a.lap_time_seconds:.3f}s" if telemetry_a.lap_time_seconds else "N/A",
+            )
+            m2.metric(
+                f"{driver_b} fastest lap",
+                f"{telemetry_b.lap_time_seconds:.3f}s" if telemetry_b.lap_time_seconds else "N/A",
+            )
+            if telemetry_a.lap_time_seconds and telemetry_b.lap_time_seconds:
+                delta = telemetry_b.lap_time_seconds - telemetry_a.lap_time_seconds
+                m3.metric("Lap delta", f"{delta:+.3f}s", help="Positive means Driver A is faster.")
 
             st.plotly_chart(compare_driver_speed_trace(telemetry_a, telemetry_b), use_container_width=True)
             st.plotly_chart(compare_driver_controls(telemetry_a, telemetry_b, tel_channel), use_container_width=True)
@@ -364,9 +672,12 @@ with tab5:
 
 
 with tab6:
-    st.subheader("Tire degradation")
-    st.write(
-        "Estimate tire degradation from real race laps using tyre age and lap-time evolution."
+    st.subheader("Tyre degradation")
+
+    engineering_panel(
+        "Stint and tyre-life analysis",
+        "Estimate tyre degradation from real race laps using tyre age and lap-time evolution. "
+        "This section supports strategy discussions such as one-stop vs two-stop trade-offs.",
     )
 
     c1, c2, c3, c4 = st.columns(4)
@@ -375,17 +686,21 @@ with tab6:
     deg_session = c3.selectbox("Degradation session", ["R", "S"], index=0)
     deg_driver = c4.text_input("Degradation driver", "VER").upper()
 
-    if st.button("Analyze tire degradation"):
+    if st.button("Analyze tyre degradation", type="primary"):
         try:
             with st.spinner("Loading lap data and estimating degradation..."):
                 result = load_tire_degradation(int(deg_year), deg_gp, deg_session, deg_driver)
                 cliff = detect_tire_cliff(result)
 
-            st.metric("Estimated degradation rate", f"{result.degradation_rate:.3f} s/lap")
+            c1, c2 = st.columns(2)
+            c1.metric("Estimated degradation rate", f"{result.degradation_rate:.3f} s/lap")
+            c2.metric("Potential cliff laps", len(cliff))
             st.plotly_chart(plot_degradation(result), use_container_width=True)
-            st.subheader("Compound summary")
+
+            st.markdown("### Compound summary")
             st.dataframe(result.compound_summary, use_container_width=True)
-            st.subheader("Potential tire-cliff laps")
+
+            st.markdown("### Potential tyre-cliff laps")
             st.dataframe(cliff, use_container_width=True)
 
         except Exception as exc:
@@ -395,17 +710,22 @@ with tab6:
 
 with tab7:
     st.subheader("Model diagnostics")
-    st.write(
-        "Diagnostic view for validation metrics, ranking behavior, feature coverage, and probability outputs."
+
+    engineering_panel(
+        "Transparency and validation",
+        "A serious forecasting dashboard must show feature coverage, data volume and output "
+        "distributions. Use this section to detect suspicious inputs before trusting predictions.",
     )
 
     if PREDICTIONS_PATH.exists():
         predictions = pd.read_csv(PREDICTIONS_PATH)
-        st.subheader("Prediction dataset overview")
-        c1, c2, c3 = st.columns(3)
+        st.markdown("### Prediction dataset overview")
+        c1, c2, c3, c4 = st.columns(4)
         c1.metric("Rows", len(predictions))
         c2.metric("Grand Prix events", predictions["GrandPrix"].nunique() if "GrandPrix" in predictions else "N/A")
         c3.metric("Drivers", predictions["Driver"].nunique() if "Driver" in predictions else "N/A")
+        missing_rate = float(predictions.isna().mean().mean() * 100)
+        c4.metric("Missing values", f"{missing_rate:.1f}%")
 
         numeric_cols = predictions.select_dtypes(include="number").columns.tolist()
         if numeric_cols:
@@ -415,6 +735,19 @@ with tab7:
                 use_container_width=True,
             )
 
+        if {"PredictedFinishPosition", "FinishPosition"}.issubset(predictions.columns):
+            diagnostics = predictions.dropna(subset=["PredictedFinishPosition", "FinishPosition"]).copy()
+            diagnostics["AbsoluteError"] = (
+                diagnostics["PredictedFinishPosition"] - diagnostics["FinishPosition"]
+            ).abs()
+            st.markdown("### Error inspection")
+            st.dataframe(
+                diagnostics.sort_values("AbsoluteError", ascending=False).head(25),
+                use_container_width=True,
+            )
+
+        st.markdown("### Full prediction table")
         st.dataframe(predictions, use_container_width=True)
+        show_downloads("model_diagnostics_predictions", predictions)
     else:
         st.info("Run the historical pipeline first to generate prediction diagnostics.")
