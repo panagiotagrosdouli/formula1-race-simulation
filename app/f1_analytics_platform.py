@@ -29,6 +29,7 @@ from src.f1predictor.live_broadcast import (
 from src.f1predictor.product_intelligence import (
     build_storylines,
     prepare_driver_cards,
+    race_brief_markdown,
     shareable_summary,
     uncertainty_table,
 )
@@ -214,6 +215,14 @@ def build_state(race_name: str, total_laps: int, pit_loss: float, rain_probabili
     cards = prepare_driver_cards(forecast, sim, limit=8)
     storylines = build_storylines(forecast, sim, rain_probability=rain_probability)
     share = shareable_summary(race_name, cards, storylines)
+    assumptions = {
+        "Race distance": f"{total_laps} laps",
+        "Pit-lane loss": f"{pit_loss:.1f}s",
+        "Rain probability": f"{rain_probability * 100:.1f}%",
+        "Simulation seed": seed,
+        "Monte Carlo runs": "2500",
+    }
+    brief = race_brief_markdown(race_name, cards, storylines, assumptions)
     uncertainty = uncertainty_table(sim)
     return {
         "forecast": forecast,
@@ -227,6 +236,7 @@ def build_state(race_name: str, total_laps: int, pit_loss: float, rain_probabili
         "driver_cards": cards,
         "storylines": storylines,
         "shareable": share,
+        "race_brief": brief,
         "uncertainty": uncertainty,
         **replay,
     }
@@ -305,12 +315,21 @@ with fan_tab:
 
     st.subheader("Shareable prediction summary")
     st.text_area("Copy this for social posts, reports or messages", state["shareable"], height=110)
-    st.download_button(
-        "Download prediction summary",
-        data=state["shareable"].encode("utf-8"),
-        file_name="f1_prediction_summary.txt",
-        mime="text/plain",
-    )
+    col_a, col_b = st.columns(2)
+    with col_a:
+        st.download_button(
+            "Download short summary",
+            data=state["shareable"].encode("utf-8"),
+            file_name="f1_prediction_summary.txt",
+            mime="text/plain",
+        )
+    with col_b:
+        st.download_button(
+            "Download full race brief",
+            data=state["race_brief"].encode("utf-8"),
+            file_name="f1_base44_race_brief.md",
+            mime="text/markdown",
+        )
 
 with race_tab:
     left, right = st.columns([1, 1.25])
