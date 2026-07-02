@@ -1,173 +1,221 @@
-"""Shared visual theme and UI helpers for the Streamlit application.
-
-This module keeps presentation code in one place so pages can move toward a
-single calm, professional product experience without copy-pasting large CSS blocks.
-"""
+"""Shared Base44-style visual theme and UI helpers for the Streamlit application."""
 
 from __future__ import annotations
 
 import html
 
+import plotly.graph_objects as go
 import streamlit as st
 
-APP_CSS = """
+PRIMARY = "#e10600"
+PRIMARY_DARK = "#8b0000"
+TEXT = "#f9fafb"
+MUTED = "#9ca3af"
+GRID = "rgba(255,255,255,0.08)"
+PALETTE = [PRIMARY, "#ff4d4d", "#f97316", "#facc15", "#38bdf8", "#60a5fa", "#a78bfa"]
+
+APP_CSS = f"""
 <style>
-:root {
-    --f1-accent: #2563eb;
-    --f1-accent-soft: #60a5fa;
-    --f1-bg: #0f172a;
-    --f1-bg-soft: #111827;
-    --f1-panel: rgba(17, 24, 39, 0.88);
-    --f1-panel-strong: rgba(30, 41, 59, 0.94);
-    --f1-border: rgba(148, 163, 184, 0.22);
-    --f1-muted: #94a3b8;
-    --f1-text: #e5e7eb;
-    --f1-heading: #f8fafc;
-    --f1-success: #22c55e;
-    --f1-warning: #f59e0b;
-}
+:root {{
+    --f1-accent: {PRIMARY};
+    --f1-accent-dark: {PRIMARY_DARK};
+    --f1-accent-soft: #fecaca;
+    --f1-bg: #07080d;
+    --f1-bg-soft: #0f172a;
+    --f1-panel: rgba(17, 24, 39, 0.86);
+    --f1-panel-strong: rgba(21, 31, 46, 0.94);
+    --f1-border: rgba(255, 255, 255, 0.10);
+    --f1-muted: {MUTED};
+    --f1-text: {TEXT};
+    --f1-heading: #ffffff;
+}}
 
-.stApp {
+.stApp {{
     background:
-        radial-gradient(circle at top left, rgba(37, 99, 235, 0.12), transparent 30%),
-        radial-gradient(circle at bottom right, rgba(15, 23, 42, 0.90), transparent 35%),
-        linear-gradient(135deg, #0f172a 0%, #111827 55%, #0b1120 100%);
+        radial-gradient(circle at 50% -12%, rgba(225, 6, 0, 0.18), transparent 34%),
+        linear-gradient(135deg, #030407 0%, var(--f1-bg) 48%, #0c111b 100%);
     color: var(--f1-text);
-}
+}}
 
-[data-testid="stHeader"] { background: rgba(0, 0, 0, 0); }
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0b1120 0%, #111827 100%);
-    border-right: 1px solid var(--f1-border);
-}
+[data-testid="stHeader"] {{
+    background: rgba(7, 8, 13, 0.78);
+    backdrop-filter: blur(18px);
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+}}
 
-.block-container {
-    max-width: 1640px;
-    padding-top: 1.5rem;
-}
+[data-testid="stSidebar"] {{
+    background: linear-gradient(180deg, #07080d 0%, #0f172a 100%);
+    border-right: 1px solid rgba(225, 6, 0, 0.30);
+}}
 
-.f1-hero {
-    padding: 2.3rem;
-    border-radius: 1.25rem;
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.96), rgba(15, 23, 42, 0.96));
-    border: 1px solid var(--f1-border);
-    box-shadow: 0 20px 55px rgba(0, 0, 0, 0.30);
-    margin-bottom: 1.2rem;
-}
+.block-container {{
+    max-width: 1540px;
+    padding-top: 1.15rem;
+    padding-bottom: 2.3rem;
+}}
 
-.f1-eyebrow {
-    color: var(--f1-accent-soft);
+h1, h2, h3 {{
+    color: var(--f1-heading);
+    letter-spacing: -0.04em;
+}}
+
+.f1-hero {{
+    padding: 2rem 2.15rem;
+    border-radius: 1.85rem;
+    background:
+        linear-gradient(135deg, rgba(225, 6, 0, 0.20), rgba(17, 24, 39, 0.96)),
+        radial-gradient(circle at 90% 10%, rgba(225, 6, 0, 0.16), transparent 20rem);
+    border: 1px solid rgba(225, 6, 0, 0.34);
+    box-shadow: 0 28px 90px rgba(0, 0, 0, 0.36), inset 0 1px 0 rgba(255,255,255,0.05);
+    margin-bottom: 1.15rem;
+}}
+
+.f1-eyebrow {{
+    color: #fecaca;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     font-size: 0.76rem;
-    font-weight: 750;
-    margin-bottom: 0.55rem;
-}
+    font-weight: 850;
+    margin-bottom: 0.65rem;
+}}
 
-.f1-hero h1 {
+.f1-hero h1 {{
     color: var(--f1-heading);
-    font-size: 3rem;
-    line-height: 1.05;
-    font-weight: 840;
-    margin: 0 0 0.75rem 0;
-}
+    font-size: clamp(2.25rem, 4vw, 3.85rem);
+    line-height: 1.02;
+    font-weight: 950;
+    margin: 0 0 0.8rem 0;
+}}
 
-.f1-hero p {
-    color: #cbd5e1;
+.f1-hero p {{
+    color: #d1d5db;
     font-size: 1.04rem;
-    line-height: 1.72;
-    max-width: 980px;
+    line-height: 1.68;
+    max-width: 1080px;
     margin: 0;
-}
+}}
 
-.f1-card {
-    padding: 1.15rem 1.2rem;
-    border-radius: 1rem;
-    background: var(--f1-panel);
-    border: 1px solid var(--f1-border);
-    min-height: 142px;
-    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
-}
-
-.f1-card h3 {
-    color: var(--f1-heading);
-    margin: 0 0 0.5rem 0;
-    font-size: 1.02rem;
-    font-weight: 750;
-}
-
-.f1-card p {
-    color: #cbd5e1;
-    line-height: 1.56;
-    margin: 0;
-}
-
-.f1-metric-card {
-    padding: 1rem 1.1rem;
-    border-radius: 0.95rem;
-    background: var(--f1-panel-strong);
+.f1-card, .f1-metric-card, div[data-testid="stMetric"] {{
+    border-radius: 1.35rem;
+    background: linear-gradient(180deg, rgba(21, 31, 46, 0.96), rgba(16, 23, 34, 0.92));
     border: 1px solid var(--f1-border);
     border-top: 2px solid var(--f1-accent);
-    min-height: 105px;
-}
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.26), inset 0 1px 0 rgba(255,255,255,0.04);
+}}
 
-.f1-metric-label {
+.f1-card {{
+    padding: 1.2rem 1.25rem;
+    min-height: 148px;
+}}
+
+.f1-card h3 {{
+    color: var(--f1-heading);
+    margin: 0 0 0.55rem 0;
+    font-size: 1.05rem;
+    font-weight: 850;
+}}
+
+.f1-card p {{
+    color: #d1d5db;
+    line-height: 1.58;
+    margin: 0;
+}}
+
+.f1-metric-card {{
+    padding: 1.05rem 1.15rem;
+    min-height: 112px;
+}}
+
+.f1-metric-label, div[data-testid="stMetricLabel"] {{
     color: var(--f1-muted);
     font-size: 0.78rem;
     text-transform: uppercase;
-    letter-spacing: 0.06em;
-    margin-bottom: 0.35rem;
-}
+    letter-spacing: 0.07em;
+    font-weight: 850;
+    margin-bottom: 0.38rem;
+}}
 
-.f1-metric-value {
+.f1-metric-value, div[data-testid="stMetricValue"] {{
     color: var(--f1-heading);
-    font-size: 1.55rem;
-    font-weight: 780;
-    line-height: 1.08;
-}
+    font-size: 1.65rem;
+    font-weight: 950;
+    line-height: 1.06;
+}}
 
-.f1-metric-caption {
-    color: #b6c2d1;
-    margin-top: 0.35rem;
+.f1-metric-caption {{
+    color: var(--f1-muted);
+    margin-top: 0.38rem;
     font-size: 0.86rem;
-}
+}}
 
-.f1-feed-line {
-    padding: 0.85rem 1rem;
-    border-radius: 0.8rem;
-    background: rgba(148, 163, 184, 0.075);
-    border: 1px solid rgba(148, 163, 184, 0.16);
+.f1-feed-line {{
+    padding: 0.9rem 1rem;
+    border-radius: 1rem;
+    background: rgba(16, 23, 34, 0.86);
+    border: 1px solid var(--f1-border);
     border-left: 3px solid var(--f1-accent);
     color: #dbe4ef;
     margin: 0.65rem 0;
-}
+    box-shadow: 0 14px 34px rgba(0,0,0,0.20);
+}}
 
-.f1-badge {
+.f1-badge {{
     display: inline-block;
-    padding: 0.24rem 0.55rem;
+    padding: 0.26rem 0.58rem;
     border-radius: 999px;
-    background: rgba(37, 99, 235, 0.14);
-    border: 1px solid rgba(96, 165, 250, 0.32);
-    color: #93c5fd;
+    background: rgba(225, 6, 0, 0.16);
+    border: 1px solid rgba(225, 6, 0, 0.42);
+    color: #fecaca;
     font-size: 0.74rem;
-    font-weight: 760;
-    margin-right: 0.45rem;
-}
+    font-weight: 850;
+    margin-right: 0.5rem;
+}}
 
-button[kind="primary"] {
-    border-radius: 0.7rem;
-}
+[data-testid="stDataFrame"] {{
+    border: 1px solid var(--f1-border);
+    border-radius: 1.1rem;
+    overflow: hidden;
+    background: rgba(16, 23, 34, 0.72);
+}}
+
+.stButton > button, .stDownloadButton > button {{
+    border-radius: 999px;
+    border: 1px solid rgba(255, 100, 95, 0.50);
+    background: linear-gradient(135deg, var(--f1-accent), var(--f1-accent-dark));
+    color: #ffffff;
+    font-weight: 900;
+    box-shadow: 0 12px 28px rgba(225, 6, 0, 0.20);
+}}
+
+.stButton > button:hover, .stDownloadButton > button:hover {{
+    border-color: rgba(255, 160, 155, 0.90);
+    filter: brightness(1.08);
+}}
+
+div[data-baseweb="select"] > div,
+input,
+textarea {{
+    background-color: rgba(16, 23, 34, 0.96) !important;
+    color: var(--f1-text) !important;
+    border-color: rgba(255,255,255,0.14) !important;
+    border-radius: 14px !important;
+}}
+
+section[data-testid="stTabs"] button {{
+    color: #f8fafc !important;
+    font-weight: 850 !important;
+}}
+
+.stAlert {{ border-radius: 16px; }}
 </style>
 """
 
 
 def inject_theme() -> None:
-    """Inject the shared application theme into the current Streamlit page."""
     st.markdown(APP_CSS, unsafe_allow_html=True)
 
 
 def hero(eyebrow: str, title: str, body: str) -> None:
-    """Render a calm product hero block."""
     st.markdown(
         f"""
         <div class="f1-hero">
@@ -181,7 +229,6 @@ def hero(eyebrow: str, title: str, body: str) -> None:
 
 
 def card(title: str, body: str) -> None:
-    """Render a reusable content panel."""
     st.markdown(
         f"""
         <div class="f1-card">
@@ -194,7 +241,6 @@ def card(title: str, body: str) -> None:
 
 
 def metric_card(label: str, value: str, caption: str = "") -> None:
-    """Render a reusable metric panel."""
     st.markdown(
         f"""
         <div class="f1-metric-card">
@@ -208,7 +254,6 @@ def metric_card(label: str, value: str, caption: str = "") -> None:
 
 
 def feed_line(label: str, text: str) -> None:
-    """Render a short operational status line."""
     st.markdown(
         f"""
         <div class="f1-feed-line">
@@ -217,3 +262,23 @@ def feed_line(label: str, text: str) -> None:
         """,
         unsafe_allow_html=True,
     )
+
+
+def theme_fig(fig: go.Figure) -> go.Figure:
+    fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="rgba(7,8,13,0)",
+        plot_bgcolor="rgba(16,23,34,.94)",
+        font={"color": TEXT, "family": "Inter, Arial, sans-serif"},
+        title={"font": {"color": TEXT, "size": 18}},
+        margin={"l": 18, "r": 18, "t": 52, "b": 34},
+        colorway=PALETTE,
+        legend={"bgcolor": "rgba(17,24,39,.55)", "bordercolor": "rgba(255,255,255,.10)", "borderwidth": 1},
+    )
+    fig.update_xaxes(gridcolor=GRID, zerolinecolor=GRID, linecolor="rgba(255,255,255,.18)")
+    fig.update_yaxes(gridcolor=GRID, zerolinecolor=GRID, linecolor="rgba(255,255,255,.18)")
+    return fig
+
+
+def chart(fig: go.Figure) -> None:
+    st.plotly_chart(theme_fig(fig), use_container_width=True)
