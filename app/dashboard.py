@@ -571,4 +571,5 @@ def main() -> None:
     routes[page]()
 
 
-main()
+if __name__ == "__main__":
+    main()
