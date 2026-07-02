@@ -5,6 +5,7 @@ from __future__ import annotations
 from fastapi import APIRouter
 
 from backend.app.api.schemas import (
+    DriverProbabilityResponse,
     HealthResponse,
     MonteCarloSimulationRequest,
     MonteCarloSimulationResponse,
@@ -13,6 +14,7 @@ from backend.app.api.schemas import (
 )
 from backend.app.application.event_engine import EventProbabilityModel
 from backend.app.application.monte_carlo import MonteCarloRaceSimulator
+from backend.app.application.probability_analysis import build_probability_report
 from backend.app.application.strategy_preview import StrategyPreviewInput, preview_pit_window
 from backend.app.application.weather_model import WeatherTrend
 from backend.app.domain.models import (
@@ -163,9 +165,20 @@ def monte_carlo_simulation(request: MonteCarloSimulationRequest) -> MonteCarloSi
         weather_trend=WeatherTrend(rain_intensity_delta_per_lap=request.rain_intensity_delta_per_lap),
         runs=request.runs,
     )
+    probability_report = build_probability_report(result.summary)
     return MonteCarloSimulationResponse(
         runs=result.summary.runs,
         winner_counts=result.summary.winner_counts,
         average_finish_position=result.summary.average_finish_position,
-        assumptions=list(result.summary.assumptions),
+        probabilities=[
+            DriverProbabilityResponse(
+                driver_id=row.driver_id,
+                win_probability=row.win_probability,
+                win_ci_lower=row.win_ci_lower,
+                win_ci_upper=row.win_ci_upper,
+                expected_finish_position=row.expected_finish_position,
+            )
+            for row in probability_report.drivers
+        ],
+        assumptions=list(probability_report.assumptions),
     )
