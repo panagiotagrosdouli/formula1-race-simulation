@@ -26,8 +26,14 @@ from src.f1predictor.live_broadcast import (
     plot_track_map_animation,
     plot_weather_radar,
 )
+from src.f1predictor.product_intelligence import (
+    build_storylines,
+    prepare_driver_cards,
+    shareable_summary,
+    uncertainty_table,
+)
 from src.f1predictor.race_analyst import generate_race_report
-from src.f1predictor.simulation import lap_by_lap_race_simulation, monte_carlo_race
+from src.f1predictor.simulation import lap_by_lap_race_simulation
 from src.f1predictor.visualization import plot_probabilities
 
 
@@ -90,13 +96,16 @@ h1,h2,h3 {{ letter-spacing: -.04em; color: #fff; }}
 .base44-hero h1 {{ margin:0; font-size: clamp(2.35rem, 4vw, 4.1rem); font-weight: 950; line-height: 1; }}
 .base44-hero p {{ margin:.8rem 0 0; color:#d1d5db; max-width:1120px; line-height:1.65; font-size:1.05rem; }}
 .badge {{ display:inline-block; margin:.9rem .4rem 0 0; padding:.38rem .78rem; border-radius:999px; background:rgba(225,6,0,.15); border:1px solid rgba(255,100,95,.36); color:#fecaca; font-size:.76rem; font-weight:850; letter-spacing:.05em; text-transform:uppercase; }}
-.card {{
+.card, .driver-card {{
   background: linear-gradient(180deg, rgba(21,31,46,.96), rgba(16,23,34,.92)); border:1px solid rgba(255,255,255,.10); border-top:2px solid var(--b44-primary);
   border-radius:22px; padding:19px 20px; min-height:124px; box-shadow:0 18px 45px rgba(0,0,0,.26), inset 0 1px 0 rgba(255,255,255,.04);
 }}
-.card .label {{ color:var(--b44-muted); font-size:.78rem; font-weight:850; letter-spacing:.07em; text-transform:uppercase; }}
-.card .value {{ color:#fff; font-size:2rem; font-weight:950; margin-top:.45rem; line-height:1.05; }}
-.card .sub {{ color:var(--b44-muted); font-size:.88rem; margin-top:.35rem; }}
+.card .label, .driver-card .label {{ color:var(--b44-muted); font-size:.78rem; font-weight:850; letter-spacing:.07em; text-transform:uppercase; }}
+.card .value, .driver-card .value {{ color:#fff; font-size:2rem; font-weight:950; margin-top:.45rem; line-height:1.05; }}
+.card .sub, .driver-card .sub {{ color:var(--b44-muted); font-size:.88rem; margin-top:.35rem; }}
+.driver-card .prob-row {{ display:flex; gap:.45rem; flex-wrap:wrap; margin-top:.75rem; }}
+.driver-card .prob-pill {{ padding:.28rem .55rem; border-radius:999px; background:rgba(225,6,0,.14); color:#fecaca; border:1px solid rgba(225,6,0,.30); font-size:.78rem; font-weight:800; }}
+.driver-card .why {{ color:#d1d5db; line-height:1.45; margin-top:.75rem; font-size:.88rem; }}
 .panel {{ border:1px solid rgba(255,255,255,.10); border-left:4px solid var(--b44-primary); border-radius:20px; padding:18px 20px; background:rgba(17,24,39,.78); margin:.75rem 0 1rem; }}
 .panel p {{ color:#d1d5db; line-height:1.58; margin-bottom:0; }}
 .feed {{ background:rgba(16,23,34,.86); border:1px solid rgba(255,255,255,.10); border-left:3px solid var(--b44-primary); border-radius:16px; padding:11px 13px; margin:8px 0; box-shadow:0 14px 34px rgba(0,0,0,.22); }}
@@ -144,6 +153,33 @@ def feed(label: str, text: str) -> None:
     st.markdown(f"<div class='feed'><b>{label}</b>{text}</div>", unsafe_allow_html=True)
 
 
+def driver_card(row: pd.Series) -> None:
+    team = row.get("Team", "Team unknown")
+    rank = row.get("PredictedRank", row.get("PredictedFinishPosition", "—"))
+    try:
+        rank_text = f"P{int(float(rank))}"
+    except Exception:
+        rank_text = str(rank)
+    win = float(row.get("WinProbability", 0) or 0) * 100
+    podium = float(row.get("PodiumProbability", 0) or 0) * 100
+    top10 = float(row.get("Top10Probability", 0) or 0) * 100
+    st.markdown(
+        f"""
+        <div class="driver-card">
+            <div class="label">{team}</div>
+            <div class="value">{row.get('Driver', 'Driver')} · {rank_text}</div>
+            <div class="prob-row">
+                <span class="prob-pill">Win {win:.1f}%</span>
+                <span class="prob-pill">Podium {podium:.1f}%</span>
+                <span class="prob-pill">Top 10 {top10:.1f}%</span>
+            </div>
+            <div class="why">{row.get('FanSummary', 'Prediction explanation unavailable.')}</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+
+
 @st.cache_data(show_spinner=False)
 def demo_data() -> pd.DataFrame:
     return build_demo_dataset()
@@ -175,17 +211,37 @@ def build_state(race_name: str, total_laps: int, pit_loss: float, rain_probabili
     radar = build_weather_radar(timeline, base_rain_probability=rain_probability)
     radio = generate_team_radio(timeline, replay["pitstops"], alerts)
     report = generate_race_report(forecast=forecast, simulation=sim, weather=weather)
-    return {"forecast": forecast, "sim": sim, "weather": weather, "timeline": timeline, "alerts": alerts, "radar": radar, "radio": radio, "report": report, **replay}
+    cards = prepare_driver_cards(forecast, sim, limit=8)
+    storylines = build_storylines(forecast, sim, rain_probability=rain_probability)
+    share = shareable_summary(race_name, cards, storylines)
+    uncertainty = uncertainty_table(sim)
+    return {
+        "forecast": forecast,
+        "sim": sim,
+        "weather": weather,
+        "timeline": timeline,
+        "alerts": alerts,
+        "radar": radar,
+        "radio": radio,
+        "report": report,
+        "driver_cards": cards,
+        "storylines": storylines,
+        "shareable": share,
+        "uncertainty": uncertainty,
+        **replay,
+    }
 
 
 with st.sidebar:
     st.header("Base44 Controls")
+    view_mode = st.radio("Experience mode", ["Fan Mode", "Engineer Mode"], horizontal=False)
     race_name = st.selectbox("Grand Prix", RACES_2026, index=11)
     total_laps = st.slider("Race distance", 10, 78, 53)
     pit_loss = st.slider("Pit-lane loss", 15.0, 35.0, 22.5, step=0.5)
     rain_probability = st.slider("Rain probability", 0.0, 1.0, 0.20, step=0.05)
     seed = st.number_input("Simulation seed", min_value=1, max_value=99999, value=42)
     rebuild = st.button("Build race simulation", type="primary")
+    st.caption("Fan Mode simplifies the story. Engineer Mode exposes assumptions, tables and uncertainty diagnostics.")
 
 if rebuild or "base44_state" not in st.session_state:
     with st.spinner("Building premium race intelligence workspace..."):
@@ -202,8 +258,8 @@ st.markdown(
     """
     <div class="base44-hero">
       <h1>F1 Base44 Elite Race Engineering</h1>
-      <p>A polished Formula 1 analytics workspace with race simulation, live timing, strategy intelligence, weather radar, team radio and Monte Carlo probabilities in one unified product experience.</p>
-      <span class="badge">Base44-style UI</span><span class="badge">Race control</span><span class="badge">Telemetry-ready</span><span class="badge">Strategy AI</span><span class="badge">Live simulation</span>
+      <p>A polished Formula 1 analytics workspace for beautiful race predictions, race drama, strategy intelligence, weather chaos, team radio, and engineer-grade uncertainty diagnostics.</p>
+      <span class="badge">Fan Mode</span><span class="badge">Engineer Mode</span><span class="badge">Driver Cards</span><span class="badge">Storylines</span><span class="badge">Shareable Predictions</span>
     </div>
     """,
     unsafe_allow_html=True,
@@ -226,9 +282,37 @@ with c4: kpi("Track grip", grip, "weather-adjusted")
 
 panel("Race intelligence brief", state["report"])
 
-tab1, tab2, tab3, tab4 = st.tabs(["Race Control", "Strategy", "Weather & Alerts", "Data Tables"])
+fan_tab, race_tab, strategy_tab, weather_tab, engineer_tab = st.tabs([
+    "Fan Hub", "Race Control", "Strategy", "Weather & Alerts", "Engineer Mode"
+])
 
-with tab1:
+with fan_tab:
+    st.subheader("Driver prediction cards")
+    cards = state["driver_cards"]
+    if cards.empty:
+        st.info("No driver-card data available yet.")
+    else:
+        rows = [cards.iloc[i:i + 4] for i in range(0, len(cards), 4)]
+        for row_df in rows:
+            cols = st.columns(4)
+            for col, (_, card_row) in zip(cols, row_df.iterrows()):
+                with col:
+                    driver_card(card_row)
+
+    st.subheader("Race storylines")
+    for item in state["storylines"]:
+        feed(item.title, f"{item.driver}: {item.detail}")
+
+    st.subheader("Shareable prediction summary")
+    st.text_area("Copy this for social posts, reports or messages", state["shareable"], height=110)
+    st.download_button(
+        "Download prediction summary",
+        data=state["shareable"].encode("utf-8"),
+        file_name="f1_prediction_summary.txt",
+        mime="text/plain",
+    )
+
+with race_tab:
     left, right = st.columns([1, 1.25])
     with left:
         st.subheader("Live Classification")
@@ -243,7 +327,7 @@ with tab1:
     if "WinProbability" in sim.columns:
         chart(plot_probabilities(sim, "WinProbability"))
 
-with tab2:
+with strategy_tab:
     s1, s2 = st.columns([1, 1])
     with s1:
         st.subheader("Race pace gap")
@@ -256,7 +340,7 @@ with tab2:
             for _, row in lap_radio.head(8).iterrows():
                 feed(str(row.get("Driver", "RADIO")), f"{row.get('Channel', 'Race Engineer')}: {row.get('Message', '')}")
 
-with tab3:
+with weather_tab:
     w1, w2 = st.columns([1.2, 1])
     with w1:
         st.subheader("Weather Radar")
@@ -269,14 +353,26 @@ with tab3:
             for _, row in lap_alerts.head(10).iterrows():
                 feed(str(row.get("Type", "ALERT")), str(row.get("Message", "")))
 
-with tab4:
-    d1, d2 = st.columns(2)
-    with d1:
-        st.subheader("Forecast table")
-        forecast_cols = [c for c in ["PredictedRank", "Driver", "Team", "PredictedFinishPosition", "GridPosition", "DNFRisk", "SafetyCarProbability"] if c in state["forecast"].columns]
-        st.dataframe(state["forecast"][forecast_cols], use_container_width=True, hide_index=True)
-    with d2:
-        st.subheader("Final classification")
-        st.dataframe(state["final_order"], use_container_width=True, hide_index=True)
+with engineer_tab:
+    if view_mode != "Engineer Mode":
+        st.info("Switch the sidebar to Engineer Mode for the deeper diagnostic view. The data is shown here anyway for transparency.")
 
-st.caption("Base44 Elite Live Build • main/app/f1_analytics_platform.py")
+    e1, e2 = st.columns(2)
+    with e1:
+        st.subheader("Forecast table")
+        forecast_cols = [c for c in ["PredictedRank", "Driver", "Team", "PredictedFinishPosition", "GridPosition", "DNFRisk", "SafetyCarProbability", "RiskAdjustment"] if c in state["forecast"].columns]
+        st.dataframe(state["forecast"][forecast_cols], use_container_width=True, hide_index=True)
+    with e2:
+        st.subheader("Uncertainty diagnostics")
+        st.dataframe(state["uncertainty"], use_container_width=True, hide_index=True)
+
+    st.subheader("Simulation assumptions")
+    feed("Monte Carlo", "Race probabilities come from simulation around a model forecast, not from guaranteed outcomes.")
+    feed("Weather", f"Rain probability is set to {rain_probability * 100:.1f}% and affects chaos/strategy interpretation.")
+    feed("Pit loss", f"Pit-lane loss is assumed to be {pit_loss:.1f}s. Strategy conclusions change if this assumption changes.")
+    feed("Limitations", "FastF1/weather availability, future driver form, upgrades and incidents can all invalidate a clean pre-race forecast.")
+
+    st.subheader("Final classification")
+    st.dataframe(state["final_order"], use_container_width=True, hide_index=True)
+
+st.caption("Base44 Elite Live Build • estimates, not guarantees • main/app/f1_analytics_platform.py")
