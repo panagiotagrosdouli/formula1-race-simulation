@@ -36,83 +36,206 @@ from src.f1predictor.team_center import build_all_team_profiles, build_team_prof
 from src.f1predictor.visualization import plot_probabilities
 
 
-st.set_page_config(page_title="F1 AI HUD Platform", layout="wide")
+FERRARI_RED = "#e10600"
+FERRARI_RED_SOFT = "#ff2d2d"
+CARBON_BLACK = "#020203"
+PANEL_BG = "#0a0f16"
+PANEL_BG_2 = "#111827"
+TEXT = "#f8fafc"
+MUTED = "#9ca3af"
+GRID = "rgba(255,255,255,0.08)"
+BORDER = "rgba(225,6,0,0.32)"
+PLOT_PALETTE = [FERRARI_RED, "#ff4d4d", "#f97316", "#facc15", "#38bdf8", "#60a5fa", "#a78bfa"]
 
-HUD_CSS = """
+px.defaults.template = "plotly_dark"
+px.defaults.color_discrete_sequence = PLOT_PALETTE
+
+st.set_page_config(
+    page_title="F1 Race Engineering HUD",
+    page_icon="🏎️",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
+
+HUD_CSS = f"""
 <style>
-:root {
-    --f1-red: #e10600;
-    --f1-dark: #050505;
-    --panel: #0b0f14;
-    --panel2: #111821;
-    --text: #f5f5f5;
-    --muted: #9aa4af;
-}
-.stApp {
+:root {{
+    --f1-red: {FERRARI_RED};
+    --f1-red-soft: {FERRARI_RED_SOFT};
+    --carbon: {CARBON_BLACK};
+    --panel: {PANEL_BG};
+    --panel2: {PANEL_BG_2};
+    --text: {TEXT};
+    --muted: {MUTED};
+    --border: {BORDER};
+}}
+
+.stApp {{
     background:
-        radial-gradient(circle at 50% 0%, rgba(225,6,0,0.16), transparent 30%),
-        linear-gradient(135deg, #020202 0%, #050505 45%, #101010 100%);
+        radial-gradient(circle at 52% 0%, rgba(225, 6, 0, 0.18), transparent 34%),
+        radial-gradient(circle at 85% 22%, rgba(255, 45, 45, 0.08), transparent 26%),
+        linear-gradient(135deg, #010101 0%, #05070d 45%, #0b0f14 100%);
     color: var(--text);
-}
-[data-testid="stHeader"] { background: rgba(0,0,0,0); }
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #080808, #111111);
-    border-right: 1px solid rgba(225,6,0,0.35);
-}
-.block-container { padding-top: 1.2rem; max-width: 1760px; }
-.hud-title {
-    border: 1px solid rgba(225,6,0,0.55);
-    background: linear-gradient(90deg, rgba(225,6,0,0.22), rgba(255,255,255,0.04), rgba(225,6,0,0.14));
-    box-shadow: 0 0 30px rgba(225,6,0,0.12);
-    border-radius: 16px;
-    padding: 18px 22px;
-    margin-bottom: 14px;
-}
-.hud-title h1 { margin: 0; letter-spacing: 1px; font-size: 2.1rem; }
-.hud-title p { margin: 6px 0 0 0; color: #ff3b35; font-weight: 600; }
-.hud-card {
-    background: linear-gradient(180deg, rgba(20,28,38,0.94), rgba(8,10,14,0.96));
-    border: 1px solid rgba(255,255,255,0.12);
+}}
+
+[data-testid="stHeader"] {{
+    background: rgba(1, 1, 1, 0.52);
+    backdrop-filter: blur(14px);
+}}
+
+[data-testid="stSidebar"] {{
+    background: linear-gradient(180deg, #050505, #0a0d12 52%, #050505);
+    border-right: 1px solid rgba(225, 6, 0, 0.36);
+}}
+
+.block-container {{
+    padding-top: 1rem;
+    padding-bottom: 2.25rem;
+    max-width: 1820px;
+}}
+
+h1, h2, h3 {{
+    letter-spacing: -0.035em;
+    color: #ffffff;
+}}
+
+.hud-title {{
+    border: 1px solid rgba(225, 6, 0, 0.62);
+    background:
+        linear-gradient(135deg, rgba(225, 6, 0, 0.26), rgba(12, 16, 22, 0.96)),
+        radial-gradient(circle at 88% 10%, rgba(255, 45, 45, 0.16), transparent 18rem);
+    box-shadow: 0 24px 80px rgba(0,0,0,0.38), inset 0 1px 0 rgba(255,255,255,0.06);
+    border-radius: 22px;
+    padding: 26px 30px;
+    margin-bottom: 18px;
+}}
+
+.hud-title h1 {{
+    margin: 0;
+    font-size: clamp(2.0rem, 3.1vw, 3.0rem);
+    color: #ffffff;
+}}
+
+.hud-title p {{
+    margin: 10px 0 0 0;
+    color: #ff6b66;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+}}
+
+.hud-title .hud-caption {{
+    color: #d1d5db;
+    font-size: 0.96rem;
+    font-weight: 500;
+    max-width: 1100px;
+    margin-top: 0.45rem;
+}}
+
+.hud-card {{
+    background:
+        linear-gradient(180deg, rgba(17, 24, 39, 0.96), rgba(5, 8, 12, 0.98));
+    border: 1px solid rgba(255,255,255,0.10);
     border-top: 2px solid var(--f1-red);
-    border-radius: 14px;
-    padding: 14px 16px;
-    min-height: 96px;
-    box-shadow: 0 0 18px rgba(0,0,0,0.45);
-}
-.hud-card h3 { margin: 0 0 8px 0; color: #ffffff; font-size: 1rem; }
-.hud-value { color: #ffffff; font-size: 1.8rem; font-weight: 800; }
-.hud-sub { color: var(--muted); font-size: 0.85rem; }
-.hud-feed {
-    background: rgba(0,0,0,0.28);
+    border-radius: 18px;
+    padding: 18px 18px;
+    min-height: 112px;
+    box-shadow: 0 18px 45px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.04);
+}}
+
+.hud-card h3 {{
+    margin: 0 0 10px 0;
+    color: #e5e7eb;
+    font-size: 0.84rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}}
+
+.hud-value {{
+    color: #ffffff;
+    font-size: 1.9rem;
+    font-weight: 900;
+    line-height: 1.1;
+}}
+
+.hud-sub {{
+    color: var(--muted);
+    font-size: 0.86rem;
+    margin-top: 0.35rem;
+}}
+
+.hud-feed {{
+    background: rgba(5, 8, 12, 0.74);
+    border: 1px solid rgba(255,255,255,0.08);
     border-left: 3px solid var(--f1-red);
-    padding: 9px 11px;
-    margin: 7px 0;
-    border-radius: 8px;
+    padding: 10px 12px;
+    margin: 8px 0;
+    border-radius: 10px;
     color: #f7f7f7;
-}
-.hud-badge {
+    box-shadow: 0 10px 24px rgba(0,0,0,0.20);
+}}
+
+.hud-badge {{
     display: inline-block;
     padding: 4px 9px;
     background: rgba(225,6,0,0.18);
     border: 1px solid rgba(225,6,0,0.55);
     border-radius: 999px;
-    color: #ff4b44;
-    font-size: 0.78rem;
-    font-weight: 700;
-    margin-right: 6px;
-}
-.replay-panel {
+    color: #ff6b66;
+    font-size: 0.72rem;
+    font-weight: 800;
+    margin-right: 8px;
+    letter-spacing: 0.04em;
+}}
+
+.replay-panel {{
     border: 1px solid rgba(225,6,0,0.45);
     background: rgba(5, 8, 12, 0.78);
-    border-radius: 16px;
-    padding: 14px;
-    margin-bottom: 12px;
-}
-section[data-testid="stTabs"] button { color: #f5f5f5; }
-.stDataFrame, [data-testid="stMetric"] {
-    background: rgba(10, 14, 18, 0.75);
-    border-radius: 12px;
-}
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 14px;
+}}
+
+section[data-testid="stTabs"] button {{
+    color: #f5f5f5;
+    font-weight: 700;
+}}
+
+.stDataFrame, [data-testid="stMetric"] {{
+    background: rgba(10, 14, 18, 0.78);
+    border-radius: 14px;
+}}
+
+[data-testid="stDataFrame"] {{
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    overflow: hidden;
+}}
+
+.stButton > button {{
+    border-radius: 999px;
+    border: 1px solid rgba(255, 94, 90, 0.55);
+    background: linear-gradient(135deg, var(--f1-red), #991b1b);
+    color: white;
+    font-weight: 900;
+    letter-spacing: 0.02em;
+    box-shadow: 0 12px 28px rgba(225, 6, 0, 0.22);
+}}
+
+.stButton > button:hover {{
+    border-color: rgba(255, 160, 155, 0.90);
+    filter: brightness(1.08);
+}}
+
+div[data-baseweb="select"] > div,
+input {{
+    background-color: rgba(10, 14, 18, 0.96) !important;
+    color: var(--text) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+}}
+
+hr {{
+    border-color: rgba(225, 6, 0, 0.22);
+}}
 </style>
 """
 st.markdown(HUD_CSS, unsafe_allow_html=True)
@@ -126,6 +249,26 @@ RACES_2026 = [
     "United States Grand Prix 2026", "Mexico City Grand Prix 2026", "São Paulo Grand Prix 2026",
     "Las Vegas Grand Prix 2026", "Qatar Grand Prix 2026", "Abu Dhabi Grand Prix 2026",
 ]
+
+
+def theme_fig(fig):
+    fig.update_layout(
+        template="plotly_dark",
+        paper_bgcolor="rgba(5, 7, 13, 0)",
+        plot_bgcolor="rgba(7, 10, 16, 0.96)",
+        font={"color": TEXT, "family": "Arial, sans-serif"},
+        title={"font": {"color": TEXT, "size": 18}},
+        margin={"l": 18, "r": 18, "t": 50, "b": 34},
+        colorway=PLOT_PALETTE,
+        legend={"bgcolor": "rgba(7, 10, 16, 0.55)", "bordercolor": "rgba(255,255,255,0.10)", "borderwidth": 1},
+    )
+    fig.update_xaxes(gridcolor=GRID, zerolinecolor=GRID, linecolor="rgba(255,255,255,0.18)")
+    fig.update_yaxes(gridcolor=GRID, zerolinecolor=GRID, linecolor="rgba(255,255,255,0.18)")
+    return fig
+
+
+def hud_chart(fig):
+    st.plotly_chart(theme_fig(fig), use_container_width=True)
 
 
 @st.cache_data(show_spinner=False)
@@ -211,24 +354,30 @@ def clamp_lap(value: int, total_laps: int) -> int:
 st.markdown(
     """
     <div class="hud-title">
-        <h1>F1 AI Analytics Platform</h1>
-        <p>Machine Learning • Simulation • Telemetry • Race Intelligence • Live Race Control • Replay Pro</p>
+        <h1>F1 Race Engineering Command Center</h1>
+        <p>Live Race Control • Strategy Intelligence • Telemetry • Weather Radar • Replay Pro</p>
+        <div class="hud-caption">
+            A professional HUD for simulated race-state analysis: leaderboard, track map, weather evolution,
+            team radio, race director decisions, driver telemetry and AI race briefing in one cockpit.
+        </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
 with st.sidebar:
-    st.header("HUD Controls")
-    race_name = st.selectbox("Race", RACES_2026, index=11)
-    total_laps = st.slider("Total laps", 10, 78, 53)
-    pit_loss = st.slider("Pit loss", 15.0, 35.0, 22.5, step=0.5)
+    st.header("Race Control Console")
+    race_name = st.selectbox("Grand Prix", RACES_2026, index=11)
+    total_laps = st.slider("Race distance", 10, 78, 53)
+    pit_loss = st.slider("Pit-lane time loss", 15.0, 35.0, 22.5, step=0.5)
     rain_probability = st.slider("Rain probability", 0.0, 1.0, 0.20, step=0.05)
     seed = st.number_input("Simulation seed", min_value=1, max_value=99999, value=42)
-    build = st.button("BUILD HUD RACE STATE", type="primary")
+    build = st.button("Build race state", type="primary")
+    st.divider()
+    st.caption("Use the lap selector to scrub the race state. Replay Pro gives frame-by-frame race-control review.")
 
 if build or "hud_state" not in st.session_state:
-    with st.spinner("Building F1 command-center state..."):
+    with st.spinner("Building F1 race-engineering state..."):
         st.session_state["hud_state"] = build_hud_state(race_name, int(total_laps), float(pit_loss), float(rain_probability), int(seed))
         st.session_state["hud_lap"] = 1
         st.session_state["replay_lap"] = 1
@@ -260,11 +409,16 @@ leader = lap_df.iloc[0]["Driver"] if not lap_df.empty else "N/A"
 track_grip = f"{float(lap_weather.iloc[0]['TrackGrip']) * 100:.0f}%" if not lap_weather.empty else "N/A"
 
 m1, m2, m3, m4, m5 = st.columns(5)
-with m1: card("GRAND PRIX", race_name.replace(" Grand Prix 2026", ""), "2026 simulation")
-with m2: card("LAP", f"{current_lap}/{total_laps}", "live race state")
-with m3: card("LEADER", str(leader), "current P1")
-with m4: card("TRACK GRIP", track_grip, "weather radar")
-with m5: card("DRS / ALERTS", str(len(lap_alerts)), "current lap")
+with m1:
+    card("Grand Prix", race_name.replace(" Grand Prix 2026", ""), "2026 simulation")
+with m2:
+    card("Lap", f"{current_lap}/{total_laps}", "current race state")
+with m3:
+    card("Leader", str(leader), "track position P1")
+with m4:
+    card("Track Grip", track_grip, "weather-adjusted")
+with m5:
+    card("DRS / Alerts", str(len(lap_alerts)), "current lap signals")
 
 race_control_tab, replay_pro_tab = st.tabs(["🏁 Race Control", "🎮 Replay Pro"])
 
@@ -277,10 +431,10 @@ with race_control_tab:
         order_cols = [c for c in order_cols if c in lap_df.columns]
         st.dataframe(lap_df[order_cols].head(12), use_container_width=True, hide_index=True)
 
-        st.markdown("### Monte Carlo Probabilities")
+        st.markdown("### Monte Carlo Win Probability")
         sim = state["simulation"].head(8)
         if "WinProbability" in sim.columns:
-            st.plotly_chart(plot_probabilities(sim, "WinProbability"), use_container_width=True)
+            hud_chart(plot_probabilities(sim, "WinProbability"))
 
         st.markdown("### Race Director")
         summary = build_steward_summary(director_log)
@@ -291,10 +445,10 @@ with race_control_tab:
 
     with center:
         st.markdown("### Live Track Map")
-        st.plotly_chart(plot_track_map_animation(timeline), use_container_width=True)
+        hud_chart(plot_track_map_animation(timeline))
 
         st.markdown("### Live Timing")
-        st.plotly_chart(
+        hud_chart(
             px.bar(
                 lap_df.sort_values("RacePosition"),
                 x="Driver",
@@ -302,13 +456,12 @@ with race_control_tab:
                 color="Compound",
                 hover_data=["Team", "RacePosition", "TyreAge", "PitStops", "DNF"],
                 title=f"Gap to Leader — Lap {current_lap}",
-            ),
-            use_container_width=True,
+            )
         )
 
     with right:
         st.markdown("### Weather Radar")
-        st.plotly_chart(plot_weather_radar(weather_radar[weather_radar["Lap"] <= current_lap]), use_container_width=True)
+        hud_chart(plot_weather_radar(weather_radar[weather_radar["Lap"] <= current_lap]))
 
         st.markdown("### Team Radio")
         if lap_radio.empty:
@@ -339,8 +492,8 @@ with race_control_tab:
         selected_driver = st.selectbox("Select driver", drivers, key="race_control_driver")
         profile = build_driver_profile(selected_driver, timeline)
         st.dataframe(profile, use_container_width=True, hide_index=True)
-        st.plotly_chart(plot_driver_skill_radar(selected_driver), use_container_width=True)
-        st.plotly_chart(plot_driver_status_animation(timeline, selected_driver), use_container_width=True)
+        hud_chart(plot_driver_skill_radar(selected_driver))
+        hud_chart(plot_driver_status_animation(timeline, selected_driver))
 
     with bottom2:
         st.markdown("### Team Command Center")
@@ -348,9 +501,9 @@ with race_control_tab:
         selected_team = st.selectbox("Select team", teams, key="race_control_team")
         team_profile = build_team_profile(selected_team, timeline)
         st.dataframe(team_profile, use_container_width=True, hide_index=True)
-        st.plotly_chart(plot_team_radar(selected_team), use_container_width=True)
+        hud_chart(plot_team_radar(selected_team))
         if not state["team_profiles"].empty:
-            st.plotly_chart(plot_team_comparison(state["team_profiles"]), use_container_width=True)
+            hud_chart(plot_team_comparison(state["team_profiles"]))
 
     with bottom3:
         st.markdown("### AI Presenter")
@@ -368,7 +521,7 @@ with race_control_tab:
     st.dataframe(adjusted_final, use_container_width=True, hide_index=True)
 
     st.markdown("### Full Race Director Timeline")
-    st.plotly_chart(plot_race_director_timeline(director_log), use_container_width=True)
+    hud_chart(plot_race_director_timeline(director_log))
 
 with replay_pro_tab:
     st.markdown("<div class='replay-panel'>", unsafe_allow_html=True)
@@ -410,11 +563,16 @@ with replay_pro_tab:
     replay_grip = f"{float(replay_weather.iloc[0]['TrackGrip']) * 100:.0f}%" if not replay_weather.empty else "N/A"
 
     s1, s2, s3, s4, s5 = st.columns(5)
-    with s1: card("REPLAY LAP", f"{replay_lap}/{total_laps}", "scrubbed state")
-    with s2: card("SAFETY CAR", "ACTIVE" if sc_active else "CLEAR", "SC phase marker")
-    with s3: card("VSC", "ACTIVE" if vsc_active else "CLEAR", "virtual safety car")
-    with s4: card("RAIN", "YES" if rain_active else "NO", f"grip {replay_grip}")
-    with s5: card("DNF COUNT", str(dnf_count), "cars out")
+    with s1:
+        card("Replay Lap", f"{replay_lap}/{total_laps}", "scrubbed state")
+    with s2:
+        card("Safety Car", "ACTIVE" if sc_active else "CLEAR", "SC phase marker")
+    with s3:
+        card("VSC", "ACTIVE" if vsc_active else "CLEAR", "virtual safety car")
+    with s4:
+        card("Rain", "YES" if rain_active else "NO", f"grip {replay_grip}")
+    with s5:
+        card("DNF Count", str(dnf_count), "cars out")
 
     replay_left, replay_center, replay_right = st.columns([1.05, 1.55, 1.05])
 
@@ -433,7 +591,7 @@ with replay_pro_tab:
 
     with replay_center:
         st.markdown("### 🗺 Enhanced Replay Map")
-        st.plotly_chart(plot_selected_lap_track_map(timeline, replay_lap), use_container_width=True)
+        hud_chart(plot_selected_lap_track_map(timeline, replay_lap))
 
         st.markdown("### 📺 Broadcast Replay Window")
         replay_commentary = commentary[commentary["Lap"] == replay_lap] if not commentary.empty else pd.DataFrame()
@@ -452,7 +610,7 @@ with replay_pro_tab:
         replay_driver = st.selectbox("Replay driver", replay_drivers, key="replay_driver")
         telemetry_snapshot = build_driver_telemetry_snapshot(replay_driver, timeline, sectors, replay_lap)
         st.dataframe(telemetry_snapshot, use_container_width=True, hide_index=True)
-        st.plotly_chart(plot_driver_telemetry_trace(sectors, timeline, replay_driver, replay_lap), use_container_width=True)
+        hud_chart(plot_driver_telemetry_trace(sectors, timeline, replay_driver, replay_lap))
 
         st.markdown("### 🚨 Safety Car / Race Control Center")
         if replay_events.empty:
@@ -464,7 +622,8 @@ with replay_pro_tab:
     st.markdown("### 🎥 Broadcast Mode Summary")
     b1, b2 = st.columns([1.2, 1.8])
     with b1:
-        st.dataframe(replay_lap_df[[c for c in ["RacePosition", "Driver", "GapToLeader", "Compound", "DNF"] if c in replay_lap_df.columns]].head(10), use_container_width=True, hide_index=True)
+        replay_summary_cols = [c for c in ["RacePosition", "Driver", "GapToLeader", "Compound", "DNF"] if c in replay_lap_df.columns]
+        st.dataframe(replay_lap_df[replay_summary_cols].head(10), use_container_width=True, hide_index=True)
     with b2:
         scripts = build_full_ai_presentation(
             state,
