@@ -19,6 +19,7 @@ sys.path.append(str(ROOT))
 from app.ui.cards import driver_prediction_card, feed_line, kpi_card, panel
 from app.ui.charts import plotly_chart
 from app.ui.layout import hero, page_caption, section_header
+from app.ui.navigation import Workspace, sidebar_workspace_selector
 from app.ui.theme import TOKENS, inject_theme
 from src.f1predictor.data_loader import build_demo_dataset
 from src.f1predictor.future_race_predictor import forecast_future_race
@@ -127,11 +128,13 @@ def build_state(race_name: str, total_laps: int, pit_loss: float, rain_probabili
     }
 
 
-def render_sidebar() -> tuple[str, str, int, float, float, int, bool]:
+def render_sidebar() -> tuple[Workspace, str, str, int, float, float, int, bool]:
     """Render controls and return their values."""
 
     with st.sidebar:
-        st.header("Base44 Controls")
+        st.header("F1 Command Center")
+        workspace = sidebar_workspace_selector(default_key="overview")
+        st.divider()
         mode = st.radio("Experience mode", ["Fan Mode", "Engineer Mode"], horizontal=False)
         selected_race = st.selectbox("Grand Prix", RACES_2026, index=11)
         laps = st.slider("Race distance", 10, 78, 53)
@@ -140,7 +143,27 @@ def render_sidebar() -> tuple[str, str, int, float, float, int, bool]:
         random_seed = st.number_input("Simulation seed", min_value=1, max_value=99999, value=42)
         rebuild_state = st.button("Build race simulation", type="primary")
         st.caption("Fan Mode simplifies the story. Engineer Mode exposes assumptions, tables and uncertainty diagnostics.")
-    return mode, selected_race, int(laps), float(loss), float(rain), int(random_seed), rebuild_state
+    return workspace, mode, selected_race, int(laps), float(loss), float(rain), int(random_seed), rebuild_state
+
+
+def render_overview(state: dict, race_name: str, lap: int, total_laps: int, leader: str, grip: str) -> None:
+    """Render the executive overview workspace."""
+
+    section_header("Command overview", "A product-style summary of race state, model output and narrative hooks.")
+    c1, c2, c3, c4 = st.columns(4)
+    with c1:
+        kpi_card("Grand Prix", race_name.replace(" Grand Prix 2026", ""), "2026 simulation")
+    with c2:
+        kpi_card("Current lap", f"{lap}/{total_laps}", "live race state")
+    with c3:
+        kpi_card("Race leader", str(leader), "track position P1")
+    with c4:
+        kpi_card("Track grip", grip, "weather-adjusted")
+
+    panel("Race intelligence brief", state["report"])
+    section_header("Top storylines")
+    for item in state["storylines"][:3]:
+        feed_line(item.title, f"{item.driver}: {item.detail}")
 
 
 def render_fan_hub(state: dict) -> None:
@@ -268,10 +291,45 @@ def render_engineer_mode(state: dict, view_mode: str, rain_probability: float, p
     st.dataframe(state["final_order"], use_container_width=True, hide_index=True)
 
 
+def render_workspace(
+    workspace: Workspace,
+    state: dict,
+    race_name: str,
+    lap: int,
+    total_laps: int,
+    leader: str,
+    grip: str,
+    lap_df: pd.DataFrame,
+    timeline: pd.DataFrame,
+    radar: pd.DataFrame,
+    lap_alerts: pd.DataFrame,
+    lap_radio: pd.DataFrame,
+    view_mode: str,
+    rain_probability: float,
+    pit_loss: float,
+) -> None:
+    """Render the selected product workspace."""
+
+    if workspace.key == "overview":
+        render_overview(state, race_name, lap, total_laps, leader, grip)
+    elif workspace.key == "fan":
+        render_fan_hub(state)
+    elif workspace.key == "race":
+        render_race_control(state, lap_df, timeline)
+    elif workspace.key == "strategy":
+        render_strategy(lap_df, lap_radio, lap)
+    elif workspace.key == "weather":
+        render_weather(radar, lap_alerts, lap)
+    elif workspace.key == "engineer":
+        render_engineer_mode(state, view_mode, rain_probability, pit_loss)
+    else:
+        render_overview(state, race_name, lap, total_laps, leader, grip)
+
+
 def main() -> None:
     """Render the F1 Base44 Elite application."""
 
-    view_mode, race_name, total_laps, pit_loss, rain_probability, seed, rebuild = render_sidebar()
+    workspace, view_mode, race_name, total_laps, pit_loss, rain_probability, seed, rebuild = render_sidebar()
 
     if rebuild or "base44_state" not in st.session_state:
         with st.spinner("Building premium race intelligence workspace..."):
@@ -290,7 +348,7 @@ def main() -> None:
             "A polished Formula 1 analytics workspace for beautiful race predictions, race drama, "
             "strategy intelligence, weather chaos, team radio, and engineer-grade uncertainty diagnostics."
         ),
-        badges=["Fan Mode", "Engineer Mode", "Driver Cards", "Storylines", "Shareable Predictions"],
+        badges=[workspace.label, "Fan Mode", "Engineer Mode", "Driver Cards", "Shareable Predictions"],
     )
 
     lap = st.slider("Race timeline", 1, int(total_laps), int(st.session_state.get("base44_lap", 1)))
@@ -302,32 +360,23 @@ def main() -> None:
     leader = lap_df.iloc[0]["Driver"] if not lap_df.empty else "N/A"
     grip = f"{float(lap_radar.iloc[0]['TrackGrip']) * 100:.0f}%" if not lap_radar.empty else "N/A"
 
-    c1, c2, c3, c4 = st.columns(4)
-    with c1:
-        kpi_card("Grand Prix", race_name.replace(" Grand Prix 2026", ""), "2026 simulation")
-    with c2:
-        kpi_card("Current lap", f"{lap}/{total_laps}", "live race state")
-    with c3:
-        kpi_card("Race leader", str(leader), "track position P1")
-    with c4:
-        kpi_card("Track grip", grip, "weather-adjusted")
-
-    panel("Race intelligence brief", state["report"])
-
-    fan_tab, race_tab, strategy_tab, weather_tab, engineer_tab = st.tabs([
-        "Fan Hub", "Race Control", "Strategy", "Weather & Alerts", "Engineer Mode"
-    ])
-
-    with fan_tab:
-        render_fan_hub(state)
-    with race_tab:
-        render_race_control(state, lap_df, timeline)
-    with strategy_tab:
-        render_strategy(lap_df, lap_radio, lap)
-    with weather_tab:
-        render_weather(radar, lap_alerts, lap)
-    with engineer_tab:
-        render_engineer_mode(state, view_mode, rain_probability, pit_loss)
+    render_workspace(
+        workspace=workspace,
+        state=state,
+        race_name=race_name,
+        lap=lap,
+        total_laps=total_laps,
+        leader=str(leader),
+        grip=grip,
+        lap_df=lap_df,
+        timeline=timeline,
+        radar=radar,
+        lap_alerts=lap_alerts,
+        lap_radio=lap_radio,
+        view_mode=view_mode,
+        rain_probability=rain_probability,
+        pit_loss=pit_loss,
+    )
 
     page_caption("Base44 Elite Live Build • estimates, not guarantees • main/app/f1_analytics_platform.py")
 
