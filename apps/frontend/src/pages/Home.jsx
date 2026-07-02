@@ -1,8 +1,10 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import { TrendingUp, FlaskConical, Activity, Bot, ChevronRight, Cpu, Target, GaugeCircle } from 'lucide-react';
 import Panel from '@/components/ui-f1/Panel';
 import Stat from '@/components/ui-f1/Stat';
+import { getHealth } from '@/lib/api-client';
 
 const QUICK = [
   { to: '/predictor', label: 'Race Predictor', icon: TrendingUp, desc: 'Winner and podium probabilities' },
@@ -12,6 +14,13 @@ const QUICK = [
 ];
 
 export default function Home() {
+  const { data: health, isLoading, error } = useQuery({
+    queryKey: ['backend-health'],
+    queryFn: getHealth,
+    retry: 1,
+  });
+  const backendStatus = isLoading ? 'CHECKING' : error ? 'OFFLINE' : health?.status?.toUpperCase() || 'UNKNOWN';
+
   return (
     <div className="space-y-6">
       <Panel className="relative overflow-hidden p-8 md:p-10">
@@ -20,10 +29,11 @@ export default function Home() {
           <div className="text-[11px] font-semibold tracking-[0.28em] uppercase text-white/45 font-mono-f1">Executive Overview</div>
           <h1 className="font-display text-4xl md:text-5xl font-extrabold tracking-tight mt-3">APEX Race Engineering</h1>
           <p className="text-white/45 mt-3 max-w-3xl">Professional Formula 1 race strategy, telemetry, simulation and probability intelligence built to connect with the existing FastAPI engineering backend.</p>
-          <div className="grid md:grid-cols-3 gap-4 mt-8">
+          <div className="grid md:grid-cols-4 gap-4 mt-8">
+            <Stat label="Backend" value={backendStatus} sub={health?.service || 'FastAPI service'} accent={!error && !isLoading} />
             <Stat label="Race confidence" value="87%" sub="calibrated model status" accent />
             <Stat label="Simulations" value="2,500" sub="Monte Carlo baseline" />
-            <Stat label="Predicted winner" value="LEC" sub="demo display pending API wiring" />
+            <Stat label="Predicted winner" value="LEC" sub="demo display pending full API wiring" />
           </div>
         </div>
       </Panel>
