@@ -7,7 +7,7 @@ FastAPI, Streamlit, database clients, or plotting libraries.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import StrEnum
+from enum import Enum
 from typing import NewType
 
 DriverId = NewType("DriverId", str)
@@ -15,7 +15,16 @@ TeamId = NewType("TeamId", str)
 CircuitId = NewType("CircuitId", str)
 
 
-class TyreCompound(StrEnum):
+class StringEnum(str, Enum):
+    """Python 3.10-compatible string enum base class.
+
+    Python's standard `StrEnum` exists only in Python 3.11+. GitHub Actions for
+    this project currently runs Python 3.10, so domain enums inherit from this
+    compatibility class instead.
+    """
+
+
+class TyreCompound(StringEnum):
     """Supported Formula 1 tyre compounds."""
 
     SOFT = "soft"
@@ -25,7 +34,7 @@ class TyreCompound(StrEnum):
     WET = "wet"
 
 
-class RaceEventType(StrEnum):
+class RaceEventType(StringEnum):
     """Race events that can change strategy or classification."""
 
     GREEN_FLAG = "green_flag"
