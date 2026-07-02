@@ -51,11 +51,11 @@ def compute_pre_race_elo(
 ) -> pd.DataFrame:
     out = df.sort_values(round_col).copy()
     elo = EloSystem(k=k, initial_rating=initial_rating)
-    out[rating_col] = initial_rating
+    out[rating_col] = float(initial_rating)
 
     for round_no in sorted(out[round_col].dropna().unique()):
         idx = out[out[round_col] == round_no].index
-        out.loc[idx, rating_col] = out.loc[idx, entity_col].astype(str).map(elo.get)
+        out.loc[idx, rating_col] = out.loc[idx, entity_col].astype(str).map(elo.get).astype(float)
 
         race_df = out.loc[idx]
         if finish_col in race_df.columns and race_df[finish_col].notna().any():
