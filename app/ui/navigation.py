@@ -23,6 +23,7 @@ class Workspace:
 
 WORKSPACES: tuple[Workspace, ...] = (
     Workspace("overview", "Overview", "🏠", "Executive race-intelligence overview."),
+    Workspace("ai", "AI Engineer", "🤖", "Command-center recommendation and race-state pressure."),
     Workspace("fan", "Fan Hub", "🏎️", "Driver cards, race drama and shareable predictions."),
     Workspace("race", "Race Control", "📡", "Live classification, track map and Monte Carlo probability."),
     Workspace("strategy", "Strategy", "🛞", "Race pace, compound context and team-radio interpretation."),
