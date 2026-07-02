@@ -1,433 +1,243 @@
-# F1 AI Forecasting Platform
+# F1 Base44 Elite Race Engineering
 
-Machine learning-driven Formula 1 forecasting and motorsport analytics platform built with Python, FastF1 telemetry, weather intelligence, Monte Carlo simulation, and interactive dashboards.
+A premium Formula 1 AI forecasting and motorsport analytics platform built with Python, Streamlit, FastF1-style telemetry, weather intelligence, Monte Carlo simulation, ML predictions, race-risk modelling, tyre strategy, and fan-friendly race storytelling.
 
----
-
-## Live Application
-https://formula1-race-simulation-injvb6zyfjh7kbs6nr4mh5.streamlit.app/
----
-
-## Overview
-
-F1 AI Forecasting Platform is a complete motorsport data science project focused on forecasting Formula 1 race outcomes and championship standings using:
-
-* machine learning
-* Monte Carlo simulation
-* weather intelligence
-* telemetry analytics
-* risk modeling
-* championship forecasting
-* interactive visualization
-
-The system combines motorsport engineering concepts with modern ML workflows to estimate:
-
-* finishing order
-* win probabilities
-* podium probabilities
-* top-10 probabilities
-* championship standings
-* race risk
-* weather impact
+**Live app:** https://formula1-race-simulation-injvb6zyfjh7kbs6nr4mh5.streamlit.app/
 
 ---
 
-## Core Features
+## Why this project matters
 
-### Historical Race Prediction
+Formula 1 prediction is not only about guessing the winner. A credible racing intelligence product must combine pace, grid position, driver/team strength, uncertainty, weather, safety-car volatility, tyre degradation, pit strategy, telemetry and model limitations. This project is designed to be useful for two audiences at once:
 
-Predicts finishing positions using:
+- **F1 fans** who want beautiful race predictions, driver cards, race drama, simple explanations and shareable summaries.
+- **Engineers/data people** who want probability distributions, assumptions, model diagnostics, telemetry context and transparent uncertainty.
 
-* qualifying pace
-* grid position
-* long-run pace
-* team strength
-* driver rating
-* recent form
-
-Built using:
-
-* Random Forest Regression
-* feature engineering
-* cross-validation
-* ranking analysis
+The app is intentionally honest: every forecast is an estimate, not a guarantee.
 
 ---
 
-### Future Race Forecasting
+## Product experience
 
-Forecasts races that have not yet occurred using:
+The main Streamlit app is a modern F1 command-center style workspace with:
 
-* Driver Elo ratings
-* Team Elo ratings
-* rolling performance metrics
-* recent form
-* 2026 driver/team priors
-* weather conditions
+- **Fan Mode** — driver cards, storylines, simple-language explanations, shareable prediction summary.
+- **Engineer Mode** — forecast tables, uncertainty diagnostics, assumptions, model/race limitations.
+- **Race Control** — lap-by-lap race state, classification, track map and Monte Carlo probability chart.
+- **Strategy Lab** — tyre plans, pit-lane loss sensitivity and pit-window analysis.
+- **Telemetry Lab** — FastF1-style speed, delta, controls and track-map comparison workflows.
+- **AI Race Analyst** — human-readable race brief and explainable recommendation layer.
 
-Outputs:
+### Screenshot / GIF placeholders
 
-* predicted finishing order
-* expected finishing position
-* future race outlook
+Add final media here after deployment:
 
----
-
-### Monte Carlo Simulation
-
-Runs thousands of simulated races to estimate:
-
-* win probability
-* podium probability
-* top-10 probability
-* expected finish position
-* median finish position
-
-The simulation introduces uncertainty through:
-
-* pace variation
-* race randomness
-* weather variability
-* risk modeling
+```text
+assets/screenshots/home.png
+assets/screenshots/fan_mode_driver_cards.png
+assets/screenshots/engineer_mode_uncertainty.png
+assets/demo/f1_base44_elite_walkthrough.gif
+```
 
 ---
 
-### Driver and Team Elo Ratings
+## Core capabilities
 
-Dynamic ranking system used to estimate competitive strength.
+### Race Predictor
 
-Metrics include:
+Predicts finishing order and expected finish using historical/demo data plus future-race priors. Outputs are converted into win, podium and top-10 probabilities through simulation.
 
-* DriverElo
-* TeamElo
+### Monte Carlo simulation
 
-The ratings evolve according to historical performance and are used for future race forecasting.
+Runs repeated race simulations to estimate:
 
----
+- win probability
+- podium probability
+- top-10 probability
+- expected finish
+- median finish
+- uncertainty / approximate finish interval
 
-### Weather Intelligence
+### Fan storylines
 
-Integrates weather information using Open-Meteo.
+The product intelligence layer generates:
 
-Weather variables:
+- title battle pulse
+- teammate battle
+- dark horse
+- biggest risk
+- weather chaos factor
+- “Why this prediction?” explanations
+- copyable/downloadable prediction summary
 
-* air temperature
-* humidity
-* wind speed
-* rain probability
+### Engineering diagnostics
 
-Weather impacts:
+Engineer Mode surfaces:
 
-* forecast uncertainty
-* race volatility
-* Monte Carlo variability
-* race risk estimation
+- forecast table
+- risk columns where available
+- safety-car / DNF assumptions
+- Monte Carlo probability table
+- approximate finish intervals
+- simulation limitations
+- weather and pit-loss sensitivity notes
 
----
+### Telemetry and strategy modules
 
-### Safety Car & DNF Risk Modeling
-
-Estimates race risk using:
-
-* circuit characteristics
-* weather conditions
-* team reliability
-* rookie status
-* historical retirement rates
-
-Outputs:
-
-* Safety Car probability
-* DNF risk
-* risk adjustment score
+The repository includes FastF1-style telemetry workflows, tyre degradation dashboards, strategy optimisation, pit-window simulation and live timing demos.
 
 ---
 
-### Telemetry Analysis
-
-Uses FastF1 telemetry data for driver comparison.
-
-Includes:
-
-* speed traces
-* distance-based telemetry
-* fastest lap comparison
-* sector performance analysis
-
-Example:
-
-* Verstappen vs Leclerc telemetry comparison
-
----
-
-### Tire Degradation Modeling
-
-Models tire wear and lap-time evolution over a stint.
-
-Includes:
-
-* degradation slope estimation
-* tire cliff behavior
-* compound comparison
-* pace decay visualization
-
----
-
-### Race Strategy Optimization
-
-Simulates complete race strategies.
-
-Supports:
-
-* one-stop strategies
-* two-stop strategies
-* undercut analysis
-* pit-loss simulation
-
-The optimizer evaluates:
-
-* total race time
-* compound effectiveness
-* ideal pit windows
-
----
-
-### AI Race Analyst
-
-Automatically generates race reports including:
-
-* projected winner
-* podium outlook
-* weather summary
-* risk assessment
-* probability analysis
-
-The goal is to provide human-readable explanations alongside numerical forecasts.
-
----
-
-### 2026 Championship Simulator
-
-Simulates the entire Formula 1 season.
-
-Outputs:
-
-#### Drivers Championship
-
-* expected points
-* projected championship position
-
-#### Constructors Championship
-
-* constructor points
-* projected championship position
-
----
-
-### Real FastF1 Training
-
-Train the platform using real Formula 1 sessions.
-
-Supported data:
-
-* qualifying sessions
-* race sessions
-* official timing information
-* driver performance data
-
-This allows the model to move beyond synthetic demonstration data and use real motorsport datasets.
-
----
-
-## Technology Stack
-
-| Category             | Tools                 |
-| -------------------- | --------------------- |
-| Language             | Python                |
-| Machine Learning     | Scikit-Learn, XGBoost |
-| Telemetry            | FastF1                |
-| Data Processing      | Pandas, NumPy         |
-| Visualization        | Plotly, Matplotlib    |
-| Dashboard            | Streamlit             |
-| Weather Intelligence | Open-Meteo            |
-| Simulation           | Monte Carlo Methods   |
-
----
-
-## Project Structure
+## Architecture
 
 ```text
 formula1-race-simulation/
-
-app/
-└── dashboard.py
-
-src/
-└── f1predictor/
-    ├── data_loader.py
-    ├── features.py
-    ├── model.py
-    ├── simulation.py
-    ├── future_race_predictor.py
-    ├── season_simulator.py
-    ├── weather.py
-    ├── race_risk.py
-    ├── race_analyst.py
-    ├── priors_2026.py
-    ├── visualization.py
-    ├── strategy_optimizer.py
-    └── telemetry/
-        ├── compare_drivers.py
-        └── tire_degradation.py
-
-tests/
-
-requirements.txt
-run_all.py
-README.md
+├── app/
+│   ├── f1_analytics_platform.py      # Streamlit Cloud entrypoint
+│   ├── components/theme.py           # shared Base44-style UI theme
+│   └── pages/                        # Streamlit multipage workspaces
+├── src/f1predictor/
+│   ├── data_loader.py
+│   ├── model.py
+│   ├── simulation.py
+│   ├── future_race_predictor.py
+│   ├── product_intelligence.py       # fan/engineer product layer
+│   ├── race_analyst.py
+│   ├── race_risk.py
+│   ├── season_simulator.py
+│   ├── strategy_optimizer.py
+│   ├── weather.py
+│   └── telemetry/
+├── tests/
+├── docs/
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
 ## Installation
 
-Clone the repository:
-
 ```bash
 git clone https://github.com/panagiotagrosdouli/formula1-race-simulation.git
 cd formula1-race-simulation
-```
-
-Create virtual environment:
-
-```bash
-python3 -m venv venv
-source venv/bin/activate
-```
-
-Install dependencies:
-
-```bash
+python -m venv venv
+source venv/bin/activate  # Windows: venv\\Scripts\\activate
 pip install -r requirements.txt
 ```
 
 ---
 
-## Running the Project
+## Run locally
 
-### Main Prediction Pipeline
+Main deployed app:
 
 ```bash
-python run_all.py
+streamlit run app/f1_analytics_platform.py
 ```
 
-### Streamlit Dashboard
+Original dashboard / extended workflows:
 
 ```bash
 streamlit run app/dashboard.py
 ```
 
-### Telemetry Comparison
+Pipeline:
 
 ```bash
-PYTHONPATH=src python src/f1predictor/telemetry/compare_drivers.py
+python run_all.py
 ```
 
-### Tire Degradation Analysis
+Tests:
 
 ```bash
-PYTHONPATH=src python src/f1predictor/telemetry/tire_degradation.py
-```
-
-### Strategy Optimization
-
-```bash
-PYTHONPATH=src python src/f1predictor/strategy_optimizer.py
+pytest
 ```
 
 ---
 
-## Dashboard Capabilities
+## Streamlit Cloud deployment
 
-The Streamlit dashboard includes:
+Use:
 
-### Historical Prediction
+```text
+Repository: panagiotagrosdouli/formula1-race-simulation
+Branch: main
+Main file path: app/f1_analytics_platform.py
+```
 
-* model training
-* race prediction
-* probability analysis
-
-### Future Race Forecast
-
-* weather-aware forecasting
-* risk modeling
-* AI race analyst
-* race probability estimation
-
-### Championship Simulator
-
-* drivers standings
-* constructors standings
-* season projections
-
-### FastF1 Training
-
-* real Formula 1 datasets
-* historical model training
+If the UI does not update after a commit, reboot the Streamlit app and hard-refresh the browser.
 
 ---
 
-## Machine Learning Workflow
+## Methodology
 
-The pipeline follows a standard ML workflow:
+The project combines:
 
-1. Data ingestion
-2. Feature engineering
-3. Historical model training
-4. Cross-validation
-5. Future race forecasting
-6. Risk modeling
-7. Monte Carlo simulation
-8. Championship projection
-9. Visualization
+- ML-based finishing-position forecasting
+- driver/team prior strength
+- grid and pace features
+- Monte Carlo uncertainty
+- weather and race risk adjustments
+- safety-car / DNF considerations
+- tyre strategy modelling
+- telemetry comparison
+- product-layer explanation generation
 
----
-
-## Academic Scope
-
-This project combines concepts from:
-
-* Machine Learning
-* Probability Theory
-* Monte Carlo Methods
-* Statistical Modeling
-* Data Science
-* Motorsport Analytics
-* Engineering Decision Systems
-
-The platform serves as an applied forecasting and analytics framework for Formula 1 race prediction and championship simulation.
+The app separates **prediction**, **uncertainty**, **interpretation**, and **limitations** so the interface stays visually engaging but scientifically honest.
 
 ---
 
-## Future Improvements
+## Current limitations
 
-Planned upgrades:
+- Demo/future races depend on priors and assumptions; they are not guarantees.
+- FastF1 availability can fail because of network/cache/session support.
+- Weather data can be unavailable or uncertain for future dates.
+- Real F1 performance changes with upgrades, reliability, penalties, setup and race incidents.
+- Approximate confidence intervals are UI diagnostics, not formal Bayesian posterior intervals yet.
 
-* XGBoost model comparison
-* neural-network forecasting
-* Bayesian race simulation
-* reinforcement learning strategy optimization
-* live telemetry ingestion
-* safety car event simulation
-* tire strategy optimization
-* real-time race prediction
-* PostgreSQL telemetry database
-* cloud-scale deployment
+---
+
+## Roadmap
+
+### Product
+
+- Add official screenshot/GIF assets.
+- Add exportable PNG/PDF race cards.
+- Add share links for prediction summaries.
+- Add mobile-first condensed views.
+
+### Data science
+
+- Add calibration plots and Brier/log-loss metrics.
+- Add backtesting by race and by season.
+- Add proper uncertainty intervals from simulation samples.
+- Add richer feature importance / SHAP-style explanations.
+- Add stronger safeguards for missing FastF1/weather data.
+
+### Engineering
+
+- Consolidate duplicated Streamlit pages.
+- Move UI components into one design-system module.
+- Improve tests around product intelligence and app imports.
+- Add reproducible data snapshots for CI.
+
+---
+
+## Recruiter / portfolio notes
+
+This repository demonstrates:
+
+- applied ML and Monte Carlo simulation
+- motorsport analytics domain modelling
+- Streamlit product design and deployment
+- Python package architecture
+- user-facing explanation design
+- fan/engineer dual-mode product thinking
 
 ---
 
 ## Author
 
-Panagiota Grosdouli
-
+Panagiota Grosdouli  
 Electrical and Computer Engineering
