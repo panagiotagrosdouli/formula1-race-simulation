@@ -8,6 +8,7 @@ from backend.app.application.event_engine import DeterministicEventEngine, Event
 from backend.app.application.fuel_model import FuelModel
 from backend.app.application.pace_model import PaceModel, PaceModelParameters
 from backend.app.application.tyre_model import TyrePerformanceModel
+from backend.app.application.weather_model import WeatherEvolutionModel, WeatherTrend
 from backend.app.domain.models import CarPerformanceProfile, Driver, DriverRaceState, RaceState, RaceEventType
 
 
@@ -19,10 +20,12 @@ class LapSimulator:
         fuel_model: FuelModel | None = None,
         tyre_model: TyrePerformanceModel | None = None,
         event_engine: DeterministicEventEngine | None = None,
+        weather_model: WeatherEvolutionModel | None = None,
     ) -> None:
         self.fuel_model = fuel_model or FuelModel()
         self.tyre_model = tyre_model or TyrePerformanceModel()
         self.event_engine = event_engine or DeterministicEventEngine()
+        self.weather_model = weather_model or WeatherEvolutionModel()
 
     def simulate_one_lap(
         self,
@@ -31,6 +34,7 @@ class LapSimulator:
         cars: dict[str, CarPerformanceProfile],
         base_lap_time_s: float,
         event_probabilities: EventProbabilityModel,
+        weather_trend: WeatherTrend | None = None,
     ) -> RaceState:
         """Return a new RaceState for lap N+1.
 
@@ -40,6 +44,7 @@ class LapSimulator:
             cars: Car performance profiles keyed by driver id string.
             base_lap_time_s: Baseline lap time for the circuit/conditions.
             event_probabilities: Explicit probability model for this lap.
+            weather_trend: Optional deterministic weather trend for the next lap.
         """
 
         if state.lap >= state.circuit.lap_count:
@@ -88,11 +93,12 @@ class LapSimulator:
             replace(item, position=index + 1, gap_to_leader_s=round((item.current_lap_time_s or 0.0) - (ordered[0].current_lap_time_s or 0.0), 4))
             for index, item in enumerate(ordered)
         )
+        next_weather = self.weather_model.step(state.weather, weather_trend or WeatherTrend())
 
         return RaceState(
             circuit=state.circuit,
             lap=state.lap + 1,
-            weather=state.weather,
+            weather=next_weather,
             driver_states=reclassified,
             events=state.events + events,
             random_seed=state.random_seed,
