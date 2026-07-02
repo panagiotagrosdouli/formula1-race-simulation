@@ -1,4 +1,4 @@
-"""F1 Base44 Elite Streamlit entrypoint.
+"""Streamlit entrypoint for the F1 Race Engineering Console.
 
 Run with:
     streamlit run app/f1_analytics_platform.py
@@ -56,8 +56,7 @@ px.defaults.template = "plotly_dark"
 px.defaults.color_discrete_sequence = TOKENS.palette
 
 st.set_page_config(
-    page_title="F1 Base44 Elite",
-    page_icon="🏎️",
+    page_title="F1 Race Engineering Console",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -124,52 +123,92 @@ def build_state(race_name: str, total_laps: int, pit_loss: float, rain_probabili
         "shareable": share,
         "race_brief": race_brief_markdown(race_name, cards, storylines, assumptions),
         "uncertainty": uncertainty_table(simulation),
+        "assumptions": assumptions,
         **replay,
     }
+
+
+def _format_probability(value: object) -> str:
+    try:
+        return f"{float(value) * 100:.1f}%"
+    except Exception:
+        return "n/a"
+
+
+def technical_model_summary(state: dict) -> str:
+    """Return an engineering-oriented model summary without fan-facing copy."""
+
+    sim = state.get("sim", pd.DataFrame())
+    assumptions = state.get("assumptions", {})
+    if sim.empty or "Driver" not in sim.columns:
+        return "Model output is unavailable for the current configuration. Review data availability and input assumptions."
+
+    ranked = sim.copy()
+    if "WinProbability" in ranked.columns:
+        ranked = ranked.sort_values("WinProbability", ascending=False)
+    top = ranked.iloc[0]
+    driver = str(top.get("Driver", "n/a"))
+    team = str(top.get("Team", "n/a"))
+    win = _format_probability(top.get("WinProbability", None))
+    podium = _format_probability(top.get("PodiumProbability", None))
+
+    return (
+        f"Highest-probability classification candidate: {driver} ({team}). "
+        f"Win probability: {win}; podium probability: {podium}. "
+        f"Simulation basis: {assumptions.get('Monte Carlo runs', 'n/a')} runs, "
+        f"seed {assumptions.get('Simulation seed', 'n/a')}, "
+        f"pit-lane loss {assumptions.get('Pit-lane loss', 'n/a')}, "
+        f"rain probability {assumptions.get('Rain probability', 'n/a')}. "
+        "Interpretation: this is a probabilistic planning output, not a deterministic race result."
+    )
 
 
 def render_sidebar() -> tuple[Workspace, str, str, int, float, float, int, bool]:
     """Render controls and return their values."""
 
     with st.sidebar:
-        st.header("F1 Command Center")
+        st.header("Race Engineering Console")
         workspace = sidebar_workspace_selector(default_key="overview")
         st.divider()
-        mode = st.radio("Experience mode", ["Fan Mode", "Engineer Mode"], horizontal=False)
+        mode = st.radio("Analysis depth", ["Operational View", "Engineering Detail"], horizontal=False)
         selected_race = st.selectbox("Grand Prix", RACES_2026, index=11)
         laps = st.slider("Race distance", 10, 78, 53)
         loss = st.slider("Pit-lane loss", 15.0, 35.0, 22.5, step=0.5)
         rain = st.slider("Rain probability", 0.0, 1.0, 0.20, step=0.05)
         random_seed = st.number_input("Simulation seed", min_value=1, max_value=99999, value=42)
-        rebuild_state = st.button("Build race simulation", type="primary")
-        st.caption("Fan Mode simplifies the story. Engineer Mode exposes assumptions, tables and uncertainty diagnostics.")
+        rebuild_state = st.button("Run simulation", type="primary")
+        st.caption("Operational View summarizes race state. Engineering Detail exposes model assumptions, diagnostics and limitations.")
     return workspace, mode, selected_race, int(laps), float(loss), float(rain), int(random_seed), rebuild_state
 
 
 def render_overview(state: dict, race_name: str, lap: int, total_laps: int, leader: str, grip: str) -> None:
-    """Render the executive overview workspace."""
+    """Render the engineering overview workspace."""
 
-    section_header("Command overview", "A product-style summary of race state, model output and narrative hooks.")
+    section_header("Race Engineering Overview", "Operational state, model output, uncertainty and assumptions.")
     c1, c2, c3, c4 = st.columns(4)
     with c1:
-        kpi_card("Grand Prix", race_name.replace(" Grand Prix 2026", ""), "2026 simulation")
+        kpi_card("Event", race_name.replace(" Grand Prix 2026", ""), "2026 scenario")
     with c2:
-        kpi_card("Current lap", f"{lap}/{total_laps}", "live race state")
+        kpi_card("Lap", f"{lap}/{total_laps}", "simulation state")
     with c3:
-        kpi_card("Race leader", str(leader), "track position P1")
+        kpi_card("Track leader", str(leader), "classification P1")
     with c4:
-        kpi_card("Track grip", grip, "weather-adjusted")
+        kpi_card("Track grip", grip, "weather-adjusted model")
 
-    panel("Race intelligence brief", state["report"])
-    section_header("Top storylines")
-    for item in state["storylines"][:3]:
-        feed_line(item.title, f"{item.driver}: {item.detail}")
+    panel("Model output summary", technical_model_summary(state))
+
+    section_header("Operational notes")
+    assumptions = state.get("assumptions", {})
+    feed_line("MODEL", f"Monte Carlo runs: {assumptions.get('Monte Carlo runs', 'n/a')}; seed: {assumptions.get('Simulation seed', 'n/a')}.")
+    feed_line("STRATEGY", f"Pit-lane loss assumption: {assumptions.get('Pit-lane loss', 'n/a')}; race distance: {assumptions.get('Race distance', 'n/a')}.")
+    feed_line("WEATHER", f"Rain probability input: {assumptions.get('Rain probability', 'n/a')}; grip state shown from live simulation timeline.")
+    feed_line("LIMITATION", "Outputs are planning estimates. They require validation against FastF1/OpenF1 data, weather accuracy and model calibration.")
 
 
 def render_fan_hub(state: dict) -> None:
-    """Render the fan-facing prediction hub."""
+    """Render the optional simplified prediction workspace."""
 
-    section_header("Driver prediction cards", "Fan-readable forecasts with probability and a plain-language explanation.")
+    section_header("Simplified Driver View", "Communication layer for non-technical stakeholders; not the primary engineering view.")
     cards = state["driver_cards"]
     if cards.empty:
         st.info("No driver-card data available yet.")
@@ -180,12 +219,12 @@ def render_fan_hub(state: dict) -> None:
                 with col:
                     driver_prediction_card(card_row)
 
-    section_header("Race storylines")
+    section_header("Communication Notes")
     for item in state["storylines"]:
         feed_line(item.title, f"{item.driver}: {item.detail}")
 
-    section_header("Shareable prediction summary")
-    st.text_area("Copy this for social posts, reports or messages", state["shareable"], height=110)
+    section_header("Exportable Summary")
+    st.text_area("Copy for report notes", state["shareable"], height=110)
     col_a, col_b = st.columns(2)
     with col_a:
         st.download_button(
@@ -198,7 +237,7 @@ def render_fan_hub(state: dict) -> None:
         st.download_button(
             "Download full race brief",
             data=state["race_brief"].encode("utf-8"),
-            file_name="f1_base44_race_brief.md",
+            file_name="f1_race_engineering_brief.md",
             mime="text/markdown",
         )
 
@@ -208,11 +247,11 @@ def render_race_control(state: dict, lap_df: pd.DataFrame, timeline: pd.DataFram
 
     left, right = st.columns([1, 1.25])
     with left:
-        section_header("Live Classification")
+        section_header("Classification")
         cols = [c for c in ["RacePosition", "Driver", "Team", "GapToLeader", "Compound", "PitStops"] if c in lap_df.columns]
         st.dataframe(lap_df[cols].head(15), use_container_width=True, hide_index=True)
     with right:
-        section_header("Track Map")
+        section_header("Circuit Position Model")
         plotly_chart(plot_track_map_animation(timeline))
 
     section_header("Monte Carlo Win Probability")
@@ -226,7 +265,7 @@ def render_strategy(lap_df: pd.DataFrame, lap_radio: pd.DataFrame, lap: int) -> 
 
     s1, s2 = st.columns([1, 1])
     with s1:
-        section_header("Race pace gap")
+        section_header("Race Pace Gap")
         plotly_chart(
             px.bar(
                 lap_df.sort_values("RacePosition"),
@@ -238,9 +277,9 @@ def render_strategy(lap_df: pd.DataFrame, lap_radio: pd.DataFrame, lap: int) -> 
             )
         )
     with s2:
-        section_header("Team Radio")
+        section_header("Radio / Event Feed")
         if lap_radio.empty:
-            feed_line("RADIO", "No team-radio message on this lap.")
+            feed_line("RADIO", "No radio message on this lap.")
         else:
             for _, row in lap_radio.head(8).iterrows():
                 feed_line(str(row.get("Driver", "RADIO")), f"{row.get('Channel', 'Race Engineer')}: {row.get('Message', '')}")
@@ -251,10 +290,10 @@ def render_weather(radar: pd.DataFrame, lap_alerts: pd.DataFrame, lap: int) -> N
 
     w1, w2 = st.columns([1.2, 1])
     with w1:
-        section_header("Weather Radar")
+        section_header("Weather Model")
         plotly_chart(plot_weather_radar(radar[radar["Lap"] <= lap]))
     with w2:
-        section_header("DRS / Overtake Alerts")
+        section_header("Race-Control Alerts")
         if lap_alerts.empty:
             feed_line("DRS", "No active DRS or overtake alert.")
         else:
@@ -265,12 +304,12 @@ def render_weather(radar: pd.DataFrame, lap_alerts: pd.DataFrame, lap: int) -> N
 def render_engineer_mode(state: dict, view_mode: str, rain_probability: float, pit_loss: float) -> None:
     """Render engineer-facing diagnostics and assumptions."""
 
-    if view_mode != "Engineer Mode":
-        st.info("Switch the sidebar to Engineer Mode for the deeper diagnostic view. The data is shown here anyway for transparency.")
+    if view_mode != "Engineering Detail":
+        st.info("Switch the sidebar to Engineering Detail for the deeper diagnostic view. The data is shown here anyway for transparency.")
 
     e1, e2 = st.columns(2)
     with e1:
-        section_header("Forecast table")
+        section_header("Forecast Table")
         forecast_cols = [
             c
             for c in ["PredictedRank", "Driver", "Team", "PredictedFinishPosition", "GridPosition", "DNFRisk", "SafetyCarProbability", "RiskAdjustment"]
@@ -278,16 +317,16 @@ def render_engineer_mode(state: dict, view_mode: str, rain_probability: float, p
         ]
         st.dataframe(state["forecast"][forecast_cols], use_container_width=True, hide_index=True)
     with e2:
-        section_header("Uncertainty diagnostics")
+        section_header("Uncertainty Diagnostics")
         st.dataframe(state["uncertainty"], use_container_width=True, hide_index=True)
 
-    section_header("Simulation assumptions")
-    feed_line("Monte Carlo", "Race probabilities come from simulation around a model forecast, not from guaranteed outcomes.")
-    feed_line("Weather", f"Rain probability is set to {rain_probability * 100:.1f}% and affects chaos/strategy interpretation.")
-    feed_line("Pit loss", f"Pit-lane loss is assumed to be {pit_loss:.1f}s. Strategy conclusions change if this assumption changes.")
-    feed_line("Limitations", "FastF1/weather availability, future driver form, upgrades and incidents can all invalidate a clean pre-race forecast.")
+    section_header("Simulation Assumptions")
+    feed_line("Monte Carlo", "Race probabilities are simulated around a model forecast and should be interpreted as distributions.")
+    feed_line("Weather", f"Rain probability input is {rain_probability * 100:.1f}% and changes uncertainty, tyre selection and incident risk.")
+    feed_line("Pit loss", f"Pit-lane loss is assumed to be {pit_loss:.1f}s. Strategy conclusions are sensitive to this value.")
+    feed_line("Limitations", "FastF1/weather availability, future driver form, upgrades, incidents and calibration error can invalidate pre-race estimates.")
 
-    section_header("Final classification")
+    section_header("Final Classification")
     st.dataframe(state["final_order"], use_container_width=True, hide_index=True)
 
 
@@ -327,12 +366,12 @@ def render_workspace(
 
 
 def main() -> None:
-    """Render the F1 Base44 Elite application."""
+    """Render the F1 Race Engineering Console."""
 
     workspace, view_mode, race_name, total_laps, pit_loss, rain_probability, seed, rebuild = render_sidebar()
 
     if rebuild or "base44_state" not in st.session_state:
-        with st.spinner("Building premium race intelligence workspace..."):
+        with st.spinner("Running race simulation and model diagnostics..."):
             st.session_state["base44_state"] = build_state(race_name, total_laps, pit_loss, rain_probability, seed)
             st.session_state["base44_lap"] = 1
 
@@ -343,15 +382,15 @@ def main() -> None:
     radio = state["radio"]
 
     hero(
-        title="F1 Base44 Elite Race Engineering",
+        title="F1 Race Engineering Console",
         body=(
-            "A polished Formula 1 analytics workspace for beautiful race predictions, race drama, "
-            "strategy intelligence, weather chaos, team radio, and engineer-grade uncertainty diagnostics."
+            "Operational race simulation environment for classification state, strategy assumptions, weather inputs, "
+            "probabilistic model output and engineering diagnostics."
         ),
-        badges=[workspace.label, "Fan Mode", "Engineer Mode", "Driver Cards", "Shareable Predictions"],
+        badges=[workspace.label, "Operational Overview", "Model Output", "Race State", "Uncertainty"],
     )
 
-    lap = st.slider("Race timeline", 1, int(total_laps), int(st.session_state.get("base44_lap", 1)))
+    lap = st.slider("Simulation lap", 1, int(total_laps), int(st.session_state.get("base44_lap", 1)))
     st.session_state["base44_lap"] = lap
     lap_df = timeline[timeline["Lap"] == lap].sort_values("RacePosition")
     lap_radar = radar[radar["Lap"] == lap]
@@ -378,7 +417,7 @@ def main() -> None:
         pit_loss=pit_loss,
     )
 
-    page_caption("Base44 Elite Live Build • estimates, not guarantees • main/app/f1_analytics_platform.py")
+    page_caption("Race Engineering Console • probabilistic model output • estimates, not guarantees • app/f1_analytics_platform.py")
 
 
 main()
