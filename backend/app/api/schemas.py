@@ -125,10 +125,21 @@ class MonteCarloSimulationRequest(BaseModel):
     rain_intensity_delta_per_lap: float = Field(default=0.0, ge=-1, le=1)
 
 
+class DriverProbabilityResponse(BaseModel):
+    """Probability-analysis row for one driver."""
+
+    driver_id: str
+    win_probability: float
+    win_ci_lower: float
+    win_ci_upper: float
+    expected_finish_position: float
+
+
 class MonteCarloSimulationResponse(BaseModel):
     """Response body for a controlled Monte Carlo race simulation."""
 
     runs: int
     winner_counts: dict[str, int]
     average_finish_position: dict[str, float]
+    probabilities: list[DriverProbabilityResponse]
     assumptions: list[str]
