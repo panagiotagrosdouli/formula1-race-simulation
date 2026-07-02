@@ -2,7 +2,8 @@
 
 These functions sit between the modelling layer and the Streamlit UI. They turn
 raw prediction/simulation tables into fan-friendly explanations, storylines,
-shareable summaries, and engineer-facing uncertainty diagnostics.
+shareable summaries, exportable race briefs, and engineer-facing uncertainty
+diagnostics.
 """
 
 from __future__ import annotations
@@ -142,7 +143,7 @@ def build_storylines(forecast: pd.DataFrame, simulation: pd.DataFrame, rain_prob
         Storyline("Title battle pulse", str(leader.get("Driver", "Leader")), f"Highest win signal at {_percent(leader.get('WinProbability', 0))}."),
         Storyline("Dark horse", str(dark_horse_row.get("Driver", "Field")), f"Podium chance {_percent(dark_horse_row.get('PodiumProbability', 0))} without being the win favourite."),
         Storyline("Teammate battle", teammate_driver, teammate_detail),
-        Storyline("Biggest risk", str(risk_row.get("Driver", "Field")), f"Reliability/risk model flags this driver as one to monitor."),
+        Storyline("Biggest risk", str(risk_row.get("Driver", "Field")), "Reliability/risk model flags this driver as one to monitor."),
         Storyline("Weather chaos factor", chaos, f"Rain probability is {rain_probability * 100:.1f}%, so strategy volatility is {chaos.lower()}.")
     ]
 
@@ -159,6 +160,58 @@ def shareable_summary(race_name: str, cards: pd.DataFrame, storylines: list[Stor
     )
     storyline_text = " | ".join(f"{s.title}: {s.driver}" for s in storylines[:3])
     return f"🏎️ {race_name} prediction: {podium_text}. {storyline_text}. Estimates, not guarantees."
+
+
+def race_brief_markdown(
+    race_name: str,
+    cards: pd.DataFrame,
+    storylines: list[Storyline],
+    assumptions: dict[str, object] | None = None,
+) -> str:
+    """Create a downloadable markdown race brief for fans and engineers."""
+
+    assumptions = assumptions or {}
+    lines = [
+        f"# {race_name} — F1 Base44 Elite Race Brief",
+        "",
+        "This report is generated from a probabilistic race simulation. It is an estimate, not a guarantee.",
+        "",
+        "## Projected front runners",
+    ]
+
+    if cards.empty:
+        lines.append("No driver prediction cards were available.")
+    else:
+        for idx, row in cards.head(8).iterrows():
+            rank = row.get("PredictedRank", idx + 1)
+            lines.append(
+                f"- **P{int(_num(rank, idx + 1))} {row.get('Driver', 'Driver')}** "
+                f"({row.get('Team', 'Team unknown')}) — Win {_percent(row.get('WinProbability', 0))}, "
+                f"Podium {_percent(row.get('PodiumProbability', 0))}, Top 10 {_percent(row.get('Top10Probability', 0))}."
+            )
+
+    lines.extend(["", "## Race storylines"])
+    if storylines:
+        for story in storylines:
+            lines.append(f"- **{story.title}:** {story.driver} — {story.detail}")
+    else:
+        lines.append("No race storylines were generated.")
+
+    lines.extend(["", "## Assumptions"])
+    if assumptions:
+        for key, value in assumptions.items():
+            lines.append(f"- **{key}:** {value}")
+    else:
+        lines.append("No assumptions were supplied.")
+
+    lines.extend([
+        "",
+        "## Scientific honesty",
+        "- Forecasts are probabilistic estimates, not certainties.",
+        "- Weather, reliability, incidents, strategy calls, upgrades and penalties can change the real outcome.",
+        "- Use Engineer Mode for assumptions, uncertainty diagnostics and raw tables.",
+    ])
+    return "\n".join(lines)
 
 
 def uncertainty_table(simulation: pd.DataFrame) -> pd.DataFrame:
