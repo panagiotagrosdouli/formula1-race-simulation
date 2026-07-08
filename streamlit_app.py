@@ -1,12 +1,16 @@
-"""Streamlit Cloud entrypoint.
-
-Streamlit Community Cloud commonly looks for `streamlit_app.py` at the repository root.
-This wrapper keeps the deployed entrypoint stable while the main app lives under `app/`.
-"""
+"""Root Streamlit Cloud entrypoint for the elite Formula 1 engineering app."""
 
 from __future__ import annotations
 
-from app.f1_analytics_platform import main
+from pathlib import Path
 
+import streamlit as st
 
-main()
+ROOT = Path(__file__).resolve().parent
+ELITE_HOME = ROOT / "f1_elite_upgrade" / "app" / "Home.py"
+
+if not ELITE_HOME.exists():
+    st.error("Elite Streamlit app entrypoint was not found.")
+    st.stop()
+
+exec(ELITE_HOME.read_text(encoding="utf-8"), {"__file__": str(ELITE_HOME), "__name__": "__main__"})
