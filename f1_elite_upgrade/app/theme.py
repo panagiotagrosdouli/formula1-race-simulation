@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import html
+
 import plotly.graph_objects as go
 import streamlit as st
 
@@ -122,6 +124,58 @@ def apply_theme() -> None:
             margin-bottom: 0;
         }}
 
+        .status-grid {{
+            display: grid;
+            grid-template-columns: repeat(4, minmax(0, 1fr));
+            gap: 0.85rem;
+            margin: 1rem 0 1.15rem;
+        }}
+
+        .status-card {{
+            border: 1px solid var(--elite-border);
+            border-radius: 20px;
+            padding: 1rem 1.05rem;
+            background: linear-gradient(180deg, rgba(31, 41, 55, 0.92), rgba(17, 24, 39, 0.86));
+            box-shadow: 0 18px 50px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.05);
+        }}
+
+        .status-card .label {{
+            color: var(--elite-muted);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            font-weight: 850;
+        }}
+
+        .status-card .value {{
+            margin-top: 0.24rem;
+            color: #ffffff;
+            font-size: 1.55rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+        }}
+
+        .status-card .caption {{
+            margin-top: 0.35rem;
+            color: #cbd5e1;
+            line-height: 1.45;
+            font-size: 0.84rem;
+        }}
+
+        .workflow-card {{
+            border: 1px solid rgba(225, 6, 0, 0.28);
+            border-radius: 22px;
+            padding: 1rem 1.1rem;
+            background: rgba(7,8,13,0.60);
+        }}
+
+        .workflow-step {{
+            border-left: 3px solid rgba(225,6,0,0.9);
+            padding: 0.4rem 0 0.4rem 0.9rem;
+            margin: 0.55rem 0;
+            color: #d1d5db;
+        }}
+
         div[data-testid="stMetric"] {{
             border: 1px solid var(--elite-border);
             border-radius: 18px;
@@ -166,6 +220,13 @@ def apply_theme() -> None:
         .stAlert {{
             border-radius: 16px;
         }}
+
+        @media (max-width: 1050px) {{
+            .status-grid {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
+        }}
+        @media (max-width: 650px) {{
+            .status-grid {{ grid-template-columns: 1fr; }}
+        }}
         </style>
         """,
         unsafe_allow_html=True,
@@ -173,12 +234,12 @@ def apply_theme() -> None:
 
 
 def hero(title: str, subtitle: str, pills: list[str] | None = None) -> None:
-    pill_html = "".join(f"<span class='elite-pill'>{pill}</span>" for pill in (pills or []))
+    pill_html = "".join(f"<span class='elite-pill'>{html.escape(pill)}</span>" for pill in (pills or []))
     st.markdown(
         f"""
         <div class="elite-hero">
-            <h1>{title}</h1>
-            <p>{subtitle}</p>
+            <h1>{html.escape(title)}</h1>
+            <p>{html.escape(subtitle)}</p>
             {pill_html}
         </div>
         """,
@@ -187,7 +248,30 @@ def hero(title: str, subtitle: str, pills: list[str] | None = None) -> None:
 
 
 def panel(title: str, body: str) -> None:
-    st.markdown(f"<div class='elite-panel'><h3>{title}</h3><p>{body}</p></div>", unsafe_allow_html=True)
+    st.markdown(
+        f"<div class='elite-panel'><h3>{html.escape(title)}</h3><p>{html.escape(body)}</p></div>",
+        unsafe_allow_html=True,
+    )
+
+
+def status_cards(items: list[tuple[str, str, str]]) -> None:
+    cards = "".join(
+        "<div class='status-card'>"
+        f"<div class='label'>{html.escape(label)}</div>"
+        f"<div class='value'>{html.escape(value)}</div>"
+        f"<div class='caption'>{html.escape(caption)}</div>"
+        "</div>"
+        for label, value, caption in items
+    )
+    st.markdown(f"<div class='status-grid'>{cards}</div>", unsafe_allow_html=True)
+
+
+def workflow_steps(steps: list[tuple[str, str]]) -> None:
+    content = "".join(
+        f"<div class='workflow-step'><b>{html.escape(title)}</b> — {html.escape(body)}</div>"
+        for title, body in steps
+    )
+    st.markdown(f"<div class='workflow-card'>{content}</div>", unsafe_allow_html=True)
 
 
 def theme_fig(fig: go.Figure) -> go.Figure:
