@@ -4,12 +4,6 @@ This directory contains the primary Streamlit product experience for the reposit
 
 ## Entry points
 
-For local development from the repository root:
-
-```bash
-streamlit run streamlit_app.py
-```
-
 Direct multipage app entrypoint:
 
 ```bash
@@ -19,12 +13,14 @@ streamlit run f1_elite_upgrade/app/Home.py
 For Streamlit Community Cloud, use:
 
 ```text
-Main file path: streamlit_app.py
+Main file path: f1_elite_upgrade/app/Home.py
 ```
+
+The repository-root `streamlit_app.py` is kept as a compatibility fallback, but the direct entrypoint above is preferred because Streamlit discovers the adjacent `pages/` directory.
 
 ## Product direction
 
-F1Sim Pro is designed as a Formula 1-style race intelligence platform, not a simple demo dashboard. The app is organized as a race-weekend command center with dedicated workspaces for prediction, strategy, telemetry, tyres, drivers, teams, tracks and reports.
+F1Sim Pro is designed as a Formula 1-style AI engineering and race intelligence platform, not a simple demo dashboard. The app is organized as a race-weekend command center with dedicated workspaces for prediction, simulation, strategy, telemetry, tyres, weather, drivers, teams, tracks, championship scenarios, model performance and reports.
 
 ## Pages
 
@@ -40,10 +36,24 @@ F1Sim Pro is designed as a Formula 1-style race intelligence platform, not a sim
 - `9_Team_Database.py` — prototype constructor intelligence database
 - `10_Track_Database.py` — prototype circuit intelligence database
 - `11_Report_Center.py` — reproducible Markdown and CSV report exports
+- `12_Weather_Center.py` — weather uncertainty and track-evolution workspace
+- `13_Monte_Carlo_Lab.py` — uncertainty, confidence interval and risk analysis
+- `14_Fantasy_Roster_Manager.py` — prototype roster, budget and contract workspace
+- `15_Reproducibility_Settings.py` — seeds, configs, data policy and roadmap
+- `16_Championship_Center.py` — driver and constructor title scenario workspace
+- `17_Model_Performance.py` — validation, calibration and explainability workspace
 
 ## Data honesty
 
 The app never claims private Formula 1 team data. Synthetic examples are labelled as prototype/demo values. Public data integrations such as FastF1/OpenF1 are scaffolds unless explicitly configured and cited.
+
+## Engineering standards
+
+- Keep UI separate from simulation and data logic.
+- Prefer deterministic seeds for simulation outputs.
+- Use weekend-aware evaluation where possible.
+- Do not present prototype probabilities as calibrated truth.
+- Document every limitation that affects interpretation.
 
 ## Next build phases
 
