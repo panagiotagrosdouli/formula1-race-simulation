@@ -36,7 +36,8 @@ def apply_theme() -> None:
 
         .stApp {{
             background:
-                radial-gradient(circle at 50% -10%, rgba(225, 6, 0, 0.16), transparent 34%),
+                radial-gradient(circle at 74% -8%, rgba(225, 6, 0, 0.18), transparent 30rem),
+                radial-gradient(circle at 8% 18%, rgba(56, 189, 248, 0.08), transparent 26rem),
                 linear-gradient(135deg, #030407 0%, var(--elite-bg) 46%, #0c111b 100%);
             color: var(--elite-text);
         }}
@@ -49,14 +50,31 @@ def apply_theme() -> None:
 
         [data-testid="stSidebar"] {{
             background:
-                linear-gradient(180deg, rgba(8, 10, 16, 0.98), rgba(12, 17, 27, 0.98));
+                linear-gradient(180deg, rgba(8, 10, 16, 0.99), rgba(12, 17, 27, 0.99));
             border-right: 1px solid {BRAND_BORDER};
         }}
 
+        [data-testid="stSidebar"] h1,
+        [data-testid="stSidebar"] h2,
+        [data-testid="stSidebar"] h3 {{
+            letter-spacing: -0.02em;
+        }}
+
+        [data-testid="stSidebar"] a {{
+            border-radius: 12px;
+            margin: 0.1rem 0;
+            transition: background 120ms ease, transform 120ms ease;
+        }}
+
+        [data-testid="stSidebar"] a:hover {{
+            background: rgba(225, 6, 0, 0.10);
+            transform: translateX(2px);
+        }}
+
         .block-container {{
-            max-width: 1500px;
-            padding-top: 1.15rem;
-            padding-bottom: 2.3rem;
+            max-width: 1520px;
+            padding-top: 1.05rem;
+            padding-bottom: 2.4rem;
         }}
 
         h1, h2, h3 {{
@@ -64,28 +82,32 @@ def apply_theme() -> None:
             letter-spacing: -0.04em;
         }}
 
+        h2 {{ margin-top: 1.3rem; }}
+        h3 {{ margin-top: 1.05rem; }}
+
         .elite-hero {{
             border: 1px solid {BRAND_BORDER};
-            border-radius: 26px;
-            padding: 26px 30px;
+            border-radius: 28px;
+            padding: 28px 32px;
             background:
-                linear-gradient(135deg, rgba(225, 6, 0, 0.20), rgba(17, 24, 39, 0.94)),
-                radial-gradient(circle at 88% 12%, rgba(225, 6, 0, 0.14), transparent 20rem);
-            box-shadow: 0 24px 72px rgba(0,0,0,0.32), inset 0 1px 0 rgba(255,255,255,0.05);
+                linear-gradient(135deg, rgba(225, 6, 0, 0.22), rgba(17, 24, 39, 0.94)),
+                radial-gradient(circle at 88% 12%, rgba(225, 6, 0, 0.16), transparent 20rem),
+                repeating-linear-gradient(112deg, transparent, transparent 22px, rgba(255,255,255,0.024) 23px, rgba(255,255,255,0.024) 24px);
+            box-shadow: 0 26px 80px rgba(0,0,0,0.34), inset 0 1px 0 rgba(255,255,255,0.06);
             margin-bottom: 1.15rem;
         }}
 
         .elite-hero h1 {{
             margin: 0;
-            font-size: clamp(2rem, 3.4vw, 2.85rem);
-            line-height: 1.05;
+            font-size: clamp(2.15rem, 3.6vw, 3.15rem);
+            line-height: 1.03;
         }}
 
         .elite-hero p {{
             color: #d1d5db;
-            max-width: 1050px;
-            margin: 0.7rem 0 0 0;
-            line-height: 1.62;
+            max-width: 1080px;
+            margin: 0.75rem 0 0 0;
+            line-height: 1.64;
             font-size: 1.01rem;
         }}
 
@@ -122,6 +144,29 @@ def apply_theme() -> None:
             color: #d1d5db;
             line-height: 1.56;
             margin-bottom: 0;
+        }}
+
+        .section-kicker {{
+            color: #fecaca;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            font-size: 0.72rem;
+            font-weight: 900;
+            margin-bottom: 0.25rem;
+        }}
+
+        .section-title {{
+            color: #ffffff;
+            font-size: 1.7rem;
+            font-weight: 900;
+            letter-spacing: -0.04em;
+            margin: 0;
+        }}
+
+        .section-copy {{
+            color: #cbd5e1;
+            line-height: 1.55;
+            margin: 0.35rem 0 1rem;
         }}
 
         .status-grid {{
@@ -188,6 +233,19 @@ def apply_theme() -> None:
         div[data-testid="stMetricLabel"] {{ color: var(--elite-muted); }}
         div[data-testid="stMetricValue"] {{ color: #ffffff; }}
 
+        .stTabs [data-baseweb="tab-list"] {{
+            gap: 0.35rem;
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }}
+
+        .stTabs [data-baseweb="tab"] {{
+            border-radius: 999px 999px 0 0;
+            padding: 0.55rem 0.85rem;
+            background: rgba(17, 24, 39, 0.56);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-bottom: 0;
+        }}
+
         .stButton > button, .stDownloadButton > button {{
             border-radius: 999px;
             border: 1px solid rgba(255, 100, 95, 0.50);
@@ -207,6 +265,7 @@ def apply_theme() -> None:
             border-radius: 16px;
             overflow: hidden;
             background: rgba(17, 24, 39, 0.72);
+            box-shadow: 0 16px 44px rgba(0,0,0,0.18);
         }}
 
         div[data-baseweb="select"] > div,
@@ -215,6 +274,11 @@ def apply_theme() -> None:
             background-color: rgba(17, 24, 39, 0.96) !important;
             color: var(--elite-text) !important;
             border-color: rgba(255,255,255,0.14) !important;
+        }}
+
+        .stSlider [data-baseweb="slider"] {{
+            padding-top: 0.25rem;
+            padding-bottom: 0.25rem;
         }}
 
         .stAlert {{
@@ -250,6 +314,17 @@ def hero(title: str, subtitle: str, pills: list[str] | None = None) -> None:
 def panel(title: str, body: str) -> None:
     st.markdown(
         f"<div class='elite-panel'><h3>{html.escape(title)}</h3><p>{html.escape(body)}</p></div>",
+        unsafe_allow_html=True,
+    )
+
+
+def section_header(kicker: str, title: str, body: str) -> None:
+    st.markdown(
+        f"""
+        <div class='section-kicker'>{html.escape(kicker)}</div>
+        <div class='section-title'>{html.escape(title)}</div>
+        <div class='section-copy'>{html.escape(body)}</div>
+        """,
         unsafe_allow_html=True,
     )
 
