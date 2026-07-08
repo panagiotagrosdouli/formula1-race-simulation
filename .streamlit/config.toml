@@ -2,14 +2,19 @@
 headless = true
 enableCORS = false
 enableXsrfProtection = false
+maxUploadSize = 50
 
 [browser]
 gatherUsageStats = false
 
+[client]
+showErrorDetails = true
+toolbarMode = "minimal"
+
 [theme]
 base = "dark"
 primaryColor = "#e10600"
-backgroundColor = "#05060a"
+backgroundColor = "#05070d"
 secondaryBackgroundColor = "#111827"
 textColor = "#f9fafb"
 font = "sans serif"
