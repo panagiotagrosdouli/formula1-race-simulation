@@ -3,7 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-import fastf1
+try:
+    import fastf1
+except ImportError:  # pragma: no cover - optional telemetry dependency
+    fastf1 = None
+
 import pandas as pd
 import plotly.graph_objects as go
 
@@ -23,6 +27,8 @@ class DriverTelemetry:
 def enable_fastf1_cache(cache_dir: Path = CACHE_DIR) -> None:
     """Enable FastF1 caching in a repository-local folder."""
 
+    if fastf1 is None:
+        raise RuntimeError("FastF1 is not installed. Install fastf1 to load public telemetry.")
     cache_dir.mkdir(parents=True, exist_ok=True)
     fastf1.Cache.enable_cache(str(cache_dir))
 
@@ -36,25 +42,37 @@ def _lap_time_to_seconds(value) -> float | None:
         return None
 
 
+def _demo_telemetry(driver: str) -> DriverTelemetry:
+    distance = list(range(0, 5200, 100))
+    offset = (sum(ord(char) for char in driver) % 7) * 0.7
+    telemetry = pd.DataFrame(
+        {
+            "Distance": distance,
+            "Speed": [285 - 35 * ((idx % 13) / 13) + offset for idx, _ in enumerate(distance)],
+            "Throttle": [100 if idx % 9 > 2 else 48 for idx, _ in enumerate(distance)],
+            "Brake": [idx % 9 <= 2 for idx, _ in enumerate(distance)],
+            "nGear": [max(1, min(8, 3 + (idx % 8))) for idx, _ in enumerate(distance)],
+            "DRS": [idx % 17 > 11 for idx, _ in enumerate(distance)],
+            "RPM": [10500 + (idx % 10) * 220 for idx, _ in enumerate(distance)],
+        }
+    )
+    return DriverTelemetry(driver=driver, lap_time_seconds=91.2 + offset / 10, compound="DEMO", telemetry=telemetry)
+
+
 def load_fastest_lap_telemetry(
     year: int,
     grand_prix: str,
     session_type: str,
     driver: str,
 ) -> DriverTelemetry:
-    """Load fastest-lap telemetry for a selected driver and session.
+    """Load fastest-lap telemetry from FastF1 or return a labelled demo fallback.
 
-    Parameters
-    ----------
-    year:
-        Formula 1 season year.
-    grand_prix:
-        Event name accepted by FastF1, e.g. "Monza" or "British Grand Prix".
-    session_type:
-        FastF1 session code, usually "Q", "R", "S", or "SQ".
-    driver:
-        Three-letter driver abbreviation, e.g. "VER".
+    FastF1 is optional so importing dashboard modules remains lightweight in CI and Streamlit
+    Cloud. The fallback is synthetic and must not be interpreted as official telemetry.
     """
+
+    if fastf1 is None:
+        return _demo_telemetry(driver)
 
     enable_fastf1_cache()
     session = fastf1.get_session(year, grand_prix, session_type)
@@ -69,7 +87,9 @@ def load_fastest_lap_telemetry(
         raise ValueError(f"Could not identify fastest lap for driver {driver}.")
 
     telemetry = fastest_lap.get_car_data().add_distance()
-    telemetry = telemetry[[c for c in ["Distance", "Speed", "Throttle", "Brake", "nGear", "DRS", "RPM"] if c in telemetry.columns]].copy()
+    telemetry = telemetry[
+        [column for column in ["Distance", "Speed", "Throttle", "Brake", "nGear", "DRS", "RPM"] if column in telemetry.columns]
+    ].copy()
 
     return DriverTelemetry(
         driver=driver,
