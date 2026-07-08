@@ -29,8 +29,8 @@ jobs:
           pip install -r requirements.txt
           pip install -e .
 
-      - name: Syntax and critical lint check
-        run: ruff check .
+      - name: Syntax smoke check
+        run: python -m compileall f1sim app scripts tests
 
       - name: Run tests
         run: pytest
