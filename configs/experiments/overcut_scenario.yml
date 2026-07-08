@@ -1,0 +1,27 @@
+name: overcut_scenario
+seed: 1121
+laps: 54
+pit_loss_s: 21.8
+safety_car_pit_loss_multiplier: 0.62
+fuel_start_kg: 96.0
+fuel_burn_kg_per_lap: 1.75
+track_temp_c: 32.0
+air_temp_c: 23.0
+rain_probability: 0.02
+safety_car_probability_per_lap: 0.015
+vsc_probability_per_lap: 0.025
+output_dir: results/overcut_scenario
+drivers:
+  - driver_id: EARLY_STOP
+    base_pace_s: 90.90
+    start_position: 1
+  - driver_id: OVERCUT
+    base_pace_s: 90.88
+    start_position: 2
+strategies:
+  - driver_id: EARLY_STOP
+    compounds: [medium, hard]
+    pit_laps: [24]
+  - driver_id: OVERCUT
+    compounds: [medium, hard]
+    pit_laps: [31]
