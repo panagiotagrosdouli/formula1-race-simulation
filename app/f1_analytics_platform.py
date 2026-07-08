@@ -274,3 +274,7 @@ def main() -> None:
         render_monte_carlo(config_path, mc_runs, seed)
 
     st.caption("F1Sim • reproducible YAML experiments • estimates, not guarantees.")
+
+
+if __name__ == "__main__":
+    main()
