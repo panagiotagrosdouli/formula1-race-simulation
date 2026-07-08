@@ -1,8 +1,8 @@
-"""Root Streamlit entrypoint for the F1Sim engineering platform."""
+"""Root Streamlit entrypoint for the F1Sim Pro platform."""
 
 from __future__ import annotations
 
-from f1sim.dashboard.app import render_dashboard
+from f1sim.dashboard.ultimate import render_platform
 
 
-render_dashboard()
+render_platform()
