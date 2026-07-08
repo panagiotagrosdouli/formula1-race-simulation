@@ -1,0 +1,27 @@
+name: high_degradation_track
+seed: 515
+laps: 56
+pit_loss_s: 21.5
+safety_car_pit_loss_multiplier: 0.60
+fuel_start_kg: 100.0
+fuel_burn_kg_per_lap: 1.75
+track_temp_c: 44.0
+air_temp_c: 31.0
+rain_probability: 0.02
+safety_car_probability_per_lap: 0.02
+vsc_probability_per_lap: 0.03
+output_dir: results/high_degradation_track
+drivers:
+  - driver_id: STRAT_A
+    base_pace_s: 93.70
+    start_position: 1
+  - driver_id: STRAT_B
+    base_pace_s: 93.75
+    start_position: 2
+strategies:
+  - driver_id: STRAT_A
+    compounds: [medium, hard]
+    pit_laps: [25]
+  - driver_id: STRAT_B
+    compounds: [soft, medium, hard]
+    pit_laps: [15, 37]
