@@ -1,0 +1,27 @@
+name: low_degradation_track
+seed: 616
+laps: 52
+pit_loss_s: 23.5
+safety_car_pit_loss_multiplier: 0.65
+fuel_start_kg: 92.0
+fuel_burn_kg_per_lap: 1.65
+track_temp_c: 28.0
+air_temp_c: 21.0
+rain_probability: 0.01
+safety_car_probability_per_lap: 0.015
+vsc_probability_per_lap: 0.02
+output_dir: results/low_degradation_track
+drivers:
+  - driver_id: ONE_STOP
+    base_pace_s: 88.90
+    start_position: 1
+  - driver_id: TWO_STOP
+    base_pace_s: 88.90
+    start_position: 2
+strategies:
+  - driver_id: ONE_STOP
+    compounds: [medium, hard]
+    pit_laps: [28]
+  - driver_id: TWO_STOP
+    compounds: [soft, medium, hard]
+    pit_laps: [17, 36]
