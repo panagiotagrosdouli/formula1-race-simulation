@@ -1,0 +1,33 @@
+name: dry_race
+seed: 42
+laps: 58
+pit_loss_s: 22.0
+safety_car_pit_loss_multiplier: 0.62
+fuel_start_kg: 100.0
+fuel_burn_kg_per_lap: 1.7
+track_temp_c: 35.0
+air_temp_c: 25.0
+rain_probability: 0.0
+safety_car_probability_per_lap: 0.015
+vsc_probability_per_lap: 0.02
+output_dir: results/dry_race
+drivers:
+  - driver_id: VER
+    base_pace_s: 91.20
+    start_position: 1
+  - driver_id: NOR
+    base_pace_s: 91.45
+    start_position: 2
+  - driver_id: LEC
+    base_pace_s: 91.55
+    start_position: 3
+strategies:
+  - driver_id: VER
+    compounds: [medium, hard]
+    pit_laps: [28]
+  - driver_id: NOR
+    compounds: [soft, medium, hard]
+    pit_laps: [18, 39]
+  - driver_id: LEC
+    compounds: [medium, hard]
+    pit_laps: [30]

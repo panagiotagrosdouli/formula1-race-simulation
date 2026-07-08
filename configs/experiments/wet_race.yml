@@ -1,0 +1,33 @@
+name: wet_race
+seed: 84
+laps: 44
+pit_loss_s: 21.5
+safety_car_pit_loss_multiplier: 0.60
+fuel_start_kg: 92.0
+fuel_burn_kg_per_lap: 1.9
+track_temp_c: 24.0
+air_temp_c: 18.0
+rain_probability: 0.35
+safety_car_probability_per_lap: 0.025
+vsc_probability_per_lap: 0.04
+output_dir: results/wet_race
+drivers:
+  - driver_id: VER
+    base_pace_s: 104.20
+    start_position: 1
+  - driver_id: HAM
+    base_pace_s: 104.35
+    start_position: 2
+  - driver_id: ALO
+    base_pace_s: 104.70
+    start_position: 3
+strategies:
+  - driver_id: VER
+    compounds: [intermediate, intermediate]
+    pit_laps: [23]
+  - driver_id: HAM
+    compounds: [intermediate, wet, intermediate]
+    pit_laps: [15, 31]
+  - driver_id: ALO
+    compounds: [wet, intermediate]
+    pit_laps: [20]

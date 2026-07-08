@@ -1,20 +1,48 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
 [project]
-name = "f1-ai-predictor"
+name = "f1sim"
 version = "0.1.0"
-description = "Formula 1 race prediction with ML and Monte Carlo simulation"
+description = "Open Formula 1 race strategy simulation engineering platform"
 readme = "README.md"
 requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Panagiota Grosdouli"}]
+dependencies = [
+  "numpy>=1.24",
+  "pandas>=2.0",
+  "pydantic>=2.0",
+  "pyyaml>=6.0",
+  "matplotlib>=3.7",
+]
 
-[tool.pytest.ini_options]
-testpaths = ["tests"]
-pythonpath = ["."]
-addopts = "-q"
+[project.optional-dependencies]
+dev = ["pytest>=8", "ruff>=0.5", "black>=24", "pre-commit>=3"]
+dashboard = ["streamlit>=1.36"]
+telemetry = ["fastf1>=3.3", "requests>=2.31"]
+optimization = ["scikit-optimize>=0.10"]
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["f1sim*"]
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
 
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+src = ["f1sim", "tests", "scripts"]
 
 [tool.ruff.lint]
-# Keep CI focused on correctness-level failures while the existing codebase is cleaned up.
-# Broader style/import rules can be enabled after a dedicated lint cleanup pass.
+# Keep CI focused on correctness-level failures while the broader legacy app and new
+# research platform converge on one consistent style baseline.
 select = ["E9", "F63", "F7", "F82"]
+
+[tool.pytest.ini_options]
+addopts = "-q"
+testpaths = ["tests"]
+pythonpath = ["."]
