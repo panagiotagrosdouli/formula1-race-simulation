@@ -1,0 +1,27 @@
+name: tyre_degradation_sensitivity
+seed: 1323
+laps: 58
+pit_loss_s: 22.0
+safety_car_pit_loss_multiplier: 0.62
+fuel_start_kg: 100.0
+fuel_burn_kg_per_lap: 1.7
+track_temp_c: 41.0
+air_temp_c: 29.0
+rain_probability: 0.02
+safety_car_probability_per_lap: 0.02
+vsc_probability_per_lap: 0.03
+output_dir: results/tyre_degradation_sensitivity
+drivers:
+  - driver_id: CONSERVATIVE
+    base_pace_s: 92.00
+    start_position: 1
+  - driver_id: AGGRESSIVE
+    base_pace_s: 91.85
+    start_position: 2
+strategies:
+  - driver_id: CONSERVATIVE
+    compounds: [medium, hard]
+    pit_laps: [27]
+  - driver_id: AGGRESSIVE
+    compounds: [soft, medium, hard]
+    pit_laps: [15, 38]
