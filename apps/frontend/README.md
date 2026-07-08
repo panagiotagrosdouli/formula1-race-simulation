@@ -1,8 +1,8 @@
 # APEX Race Engineering Frontend
 
-This directory contains the experimental React/Vite frontend for the Formula 1 Race Engineering Platform.
+This directory contains the React/Vite frontend for the Formula 1 Race Engineering Platform.
 
-It is intentionally isolated from the existing Streamlit app so the current deployment remains stable while the new interface is developed.
+This is the main visual product interface you built. It is separate from the Streamlit app and should be deployed from this directory when you want people to see the polished APEX Race Engineering UI.
 
 ## Location
 
@@ -29,23 +29,22 @@ npm install
 npm run dev
 ```
 
-By default, the frontend expects the FastAPI backend at:
-
-```text
-http://127.0.0.1:8000
-```
-
-Start the backend from the repository root:
-
-```bash
-uvicorn backend.app.main:app --reload
-```
-
 Then open the Vite URL printed in the terminal.
+
+## Demo mode
+
+The frontend now includes safe demo API fallbacks. That means the page is visible even if the FastAPI backend is not running.
+
+When the backend is offline, the UI still shows:
+
+- home dashboard status
+- race predictor demo probabilities
+- strategy preview demo recommendation
+- all route/page shells
 
 ## Backend configuration
 
-To point the frontend to another backend URL, create:
+To connect to the FastAPI backend, create:
 
 ```text
 apps/frontend/.env.local
@@ -57,19 +56,40 @@ with:
 VITE_API_BASE_URL=http://127.0.0.1:8000
 ```
 
-## Current backend integrations
+Start the backend from the repository root:
 
-The frontend currently uses these FastAPI endpoints:
+```bash
+uvicorn backend.app.main:app --reload
+```
+
+## Deploy on Vercel
+
+Use these settings:
 
 ```text
-GET  /api/v1/health
-POST /api/v1/strategy/preview
-POST /api/v1/simulations/monte-carlo
+Root Directory: apps/frontend
+Build Command: npm run build
+Output Directory: dist
+Install Command: npm install
 ```
+
+The included `vercel.json` handles SPA fallback routing.
+
+## Deploy on Netlify
+
+Use these settings:
+
+```text
+Base directory: apps/frontend
+Build command: npm run build
+Publish directory: apps/frontend/dist
+```
+
+The included `netlify.toml` handles SPA fallback routing.
 
 ## Current pages
 
-- Home: backend health indicator and executive overview
+- Home: backend/demo health indicator and executive overview
 - Race Predictor: Monte Carlo probability preview
 - Strategy Lab: pit-window preview
 - Telemetry Lab: placeholder for FastF1 telemetry workflows
@@ -81,5 +101,3 @@ POST /api/v1/simulations/monte-carlo
 ## Development principle
 
 This frontend should not duplicate or replace the Python simulation logic. It should consume typed backend endpoints and present the engineering outputs with a professional race-engineering user experience.
-
-The existing Streamlit application remains the stable legacy interface until the React frontend is complete.
