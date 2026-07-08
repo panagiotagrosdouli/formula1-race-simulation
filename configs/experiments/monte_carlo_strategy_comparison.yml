@@ -1,0 +1,27 @@
+name: monte_carlo_strategy_comparison
+seed: 2026
+laps: 58
+pit_loss_s: 22.0
+safety_car_pit_loss_multiplier: 0.62
+fuel_start_kg: 100.0
+fuel_burn_kg_per_lap: 1.7
+track_temp_c: 38.0
+air_temp_c: 27.0
+rain_probability: 0.08
+safety_car_probability_per_lap: 0.03
+vsc_probability_per_lap: 0.04
+output_dir: results/monte_carlo_strategy_comparison
+drivers:
+  - driver_id: ONE_STOP
+    base_pace_s: 91.50
+    start_position: 1
+  - driver_id: TWO_STOP
+    base_pace_s: 91.50
+    start_position: 2
+strategies:
+  - driver_id: ONE_STOP
+    compounds: [medium, hard]
+    pit_laps: [29]
+  - driver_id: TWO_STOP
+    compounds: [soft, medium, hard]
+    pit_laps: [18, 39]
