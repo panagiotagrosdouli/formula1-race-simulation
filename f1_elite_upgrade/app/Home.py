@@ -1,151 +1,98 @@
+from __future__ import annotations
+
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = ROOT.parents[0]
 sys.path.insert(0, str(ROOT / "src"))
 sys.path.insert(0, str(ROOT / "app"))
+sys.path.insert(0, str(REPO_ROOT))
 
 import pandas as pd
-import plotly.graph_objects as go
+import plotly.express as px
 import streamlit as st
-from theme import FERRARI_RED, apply_theme, chart, hero, panel
 
-st.set_page_config(page_title="F1 Elite Engineering", page_icon="🏎️", layout="wide")
+from theme import apply_theme, chart, hero, panel
+
+st.set_page_config(page_title="F1Sim Pro Command Center", page_icon="F1", layout="wide")
 apply_theme()
 
 st.markdown(
     """
     <style>
-    .elite-card-grid {
-        display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
-        gap: 1rem;
-        margin: 1rem 0 1.2rem 0;
-    }
-    .elite-card {
-        min-height: 190px;
-        border: 1px solid rgba(255,255,255,0.10);
-        border-radius: 22px;
-        padding: 1.1rem;
-        background:
-            radial-gradient(circle at 85% 12%, rgba(225,6,0,0.17), transparent 7rem),
-            linear-gradient(180deg, rgba(31,41,55,0.92), rgba(12,17,27,0.92));
-        box-shadow: 0 22px 60px rgba(0,0,0,0.26), inset 0 1px 0 rgba(255,255,255,0.05);
-    }
-    .elite-card .icon { font-size: 1.8rem; margin-bottom: 0.7rem; }
-    .elite-card h3 { margin: 0; font-size: 1.05rem; }
-    .elite-card p { color: #cbd5e1; font-size: 0.86rem; line-height: 1.55; margin: 0.55rem 0 0 0; }
-    .elite-card .tag { display: inline-block; margin-top: 0.9rem; color: #fecaca; font-size: 0.72rem; text-transform: uppercase; letter-spacing: .08em; font-weight: 800; }
-    .workflow {
-        border: 1px solid rgba(225,6,0,0.26);
-        border-radius: 24px;
-        padding: 1rem 1.1rem;
-        background: rgba(7,8,13,0.58);
-    }
-    .workflow-step {
-        border-left: 3px solid rgba(225,6,0,0.85);
-        padding: .35rem 0 .35rem .9rem;
-        margin: .55rem 0;
-        color: #d1d5db;
-    }
-    @media (max-width: 1100px) { .elite-card-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
-    @media (max-width: 700px) { .elite-card-grid { grid-template-columns: 1fr; } }
+    .f1-grid { display:grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1rem; margin: 1rem 0 1.25rem; }
+    .f1-card { min-height: 175px; border: 1px solid rgba(255,255,255,.10); border-radius: 24px; padding: 1.15rem; background: radial-gradient(circle at 88% 10%, rgba(225,6,0,.18), transparent 7rem), linear-gradient(180deg, rgba(31,41,55,.94), rgba(10,15,25,.94)); box-shadow: 0 24px 70px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.055); }
+    .f1-card h3 { margin: 0; font-size: 1.05rem; }
+    .f1-card p { color:#cbd5e1; font-size:.86rem; line-height:1.55; margin:.55rem 0 0; }
+    .f1-tag { display:inline-block; margin-top:.9rem; color:#fecaca; font-size:.72rem; letter-spacing:.08em; font-weight:850; text-transform:uppercase; }
+    .f1-status { border:1px solid rgba(225,6,0,.28); border-radius:22px; padding:1rem 1.1rem; background:rgba(7,8,13,.62); }
+    .f1-step { border-left:3px solid rgba(225,6,0,.9); padding:.4rem 0 .4rem .9rem; margin:.55rem 0; color:#d1d5db; }
+    @media (max-width: 1100px) { .f1-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 700px) { .f1-grid { grid-template-columns: 1fr; } }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 hero(
-    "🏎️ F1 Elite Race Engineering Platform",
-    "A premium Formula 1 engineering cockpit: telemetry comparison, pit-stop strategy, explainable race-engineer advice, live timing probability and simulation-driven decision support in one Streamlit experience.",
-    ["Telemetry", "Strategy", "Race Engineer AI", "Live timing", "Simulation"],
+    "F1Sim Pro Race Intelligence Platform",
+    "A premium Formula 1-style command center for race prediction, live timing analysis, tyre strategy, telemetry, driver databases and engineering reports. The platform is built on transparent open simulation models and public-data scaffolds; it never fabricates official team data.",
+    ["Race Control", "Predictions", "Telemetry", "Strategy", "Tyres", "Reports"],
 )
 
-col1, col2, col3, col4 = st.columns(4)
-col1.metric("Telemetry Lab", "Ready", "FastF1 + demo fallback")
-col2.metric("Strategy Lab", "Ready", "Pit windows + tyre life")
-col3.metric("Race Engineer AI", "Ready", "Explainable advice")
-col4.metric("Live Timing", "Ready", "Probability demo")
+m1, m2, m3, m4 = st.columns(4)
+m1.metric("Race engine", "Lap-by-lap", "tyres, fuel, gaps")
+m2.metric("Prediction", "Monte Carlo", "seeded uncertainty")
+m3.metric("Data mode", "Public/scaffold", "no fake team data")
+m4.metric("Interface", "Multipage Pro", "engineering cockpit")
 
 panel(
-    "What this app is",
-    "This Streamlit app is the main premium interface. It keeps the elite pages you built and organizes them as a motorsport engineering platform: analysis first, assumptions visible, no fake official team data.",
+    "Platform identity",
+    "This is the main Streamlit product experience. It is organized like a race-weekend operations system: observe timing, diagnose pace, simulate scenarios, decide strategy, and export an engineering report with assumptions and limitations.",
 )
 
 st.markdown(
     """
-    <div class="elite-card-grid">
-      <div class="elite-card">
-        <div class="icon">📡</div>
-        <h3>Telemetry Lab</h3>
-        <p>Compare two drivers with speed trace, lap-time delta, throttle/brake controls and track map views.</p>
-        <span class="tag">FastF1 + fallback</span>
-      </div>
-      <div class="elite-card">
-        <div class="icon">🧠</div>
-        <h3>Strategy Lab</h3>
-        <p>Simulate candidate tyre plans, pit-loss sensitivity and one-stop pit-window search.</p>
-        <span class="tag">Pit windows</span>
-      </div>
-      <div class="elite-card">
-        <div class="icon">🎙️</div>
-        <h3>Race Engineer AI</h3>
-        <p>Generate transparent pit-stop advice using undercut, tyre age, gaps, SC risk and rain exposure.</p>
-        <span class="tag">Explainable AI</span>
-      </div>
-      <div class="elite-card">
-        <div class="icon">⏱️</div>
-        <h3>Live Timing Demo</h3>
-        <p>Move the lap slider and watch synthetic live probability estimates update like a timing wall.</p>
-        <span class="tag">Race control</span>
-      </div>
+    <div class="f1-grid">
+      <div class="f1-card"><h3>Race Control</h3><p>Timing wall, position order, gaps, lap-time evolution, pit events and race-state timeline.</p><span class="f1-tag">Implemented</span></div>
+      <div class="f1-card"><h3>Prediction Center</h3><p>Projected finishing order, expected race time, confidence intervals and target-driver risk.</p><span class="f1-tag">Implemented / Prototype</span></div>
+      <div class="f1-card"><h3>Strategy Room</h3><p>One-, two- and three-stop strategies, undercut, overcut, pit windows and tyre-life risk.</p><span class="f1-tag">Implemented</span></div>
+      <div class="f1-card"><h3>Telemetry Workstation</h3><p>CSV upload, lap-time normalization, driver pace estimation and FastF1/OpenF1 scaffolds.</p><span class="f1-tag">Prototype</span></div>
+      <div class="f1-card"><h3>Tyre Lab</h3><p>Soft, medium, hard, intermediate and wet compounds with degradation and cliff behaviour.</p><span class="f1-tag">Implemented</span></div>
+      <div class="f1-card"><h3>Driver Database</h3><p>Driver profiles, pace index, wet sensitivity, qualifying and tyre-management indicators.</p><span class="f1-tag">Prototype</span></div>
+      <div class="f1-card"><h3>Team Database</h3><p>Constructor profiles, reliability, pit-crew index, upgrade signal and strategy profile.</p><span class="f1-tag">Prototype</span></div>
+      <div class="f1-card"><h3>Track Database</h3><p>Race distance, degradation, pit loss, DRS, fuel effect, SC probability and weather exposure.</p><span class="f1-tag">Prototype</span></div>
     </div>
     """,
     unsafe_allow_html=True,
 )
 
-left, right = st.columns([1.15, 0.85])
+left, right = st.columns([1.08, 0.92])
 with left:
-    st.subheader("Engineering workflow")
+    st.subheader("Race-weekend workflow")
     st.markdown(
         """
-        <div class="workflow">
-          <div class="workflow-step"><b>1. Observe</b> — read timing, gaps, tyre age, weather and telemetry traces.</div>
-          <div class="workflow-step"><b>2. Diagnose</b> — find where lap time is gained or lost using delta, speed and controls.</div>
-          <div class="workflow-step"><b>3. Simulate</b> — compare tyre plans, pit loss and strategy windows.</div>
-          <div class="workflow-step"><b>4. Decide</b> — use explainable race-engineer advice with risk and assumptions shown.</div>
-          <div class="workflow-step"><b>5. Report</b> — communicate a recommendation with limitations instead of hiding uncertainty.</div>
+        <div class="f1-status">
+          <div class="f1-step"><b>Observe</b> timing, gaps, tyres, weather and safety-car state.</div>
+          <div class="f1-step"><b>Predict</b> finishing order using lap-by-lap simulation and Monte Carlo risk.</div>
+          <div class="f1-step"><b>Diagnose</b> driver pace using telemetry or uploaded lap-time data.</div>
+          <div class="f1-step"><b>Decide</b> pit windows, undercut, overcut and tyre compound strategy.</div>
+          <div class="f1-step"><b>Report</b> assumptions, metrics, limitations and reproducible configuration.</div>
         </div>
         """,
         unsafe_allow_html=True,
     )
 with right:
-    st.subheader("Demo race intelligence")
-    demo = pd.DataFrame(
+    st.subheader("Example prediction board")
+    board = pd.DataFrame(
         {
             "Driver": ["LEC", "NOR", "VER", "PIA", "HAM"],
             "Win probability": [0.31, 0.27, 0.22, 0.13, 0.07],
+            "Expected position": [2.3, 2.8, 3.0, 4.4, 5.1],
         }
     )
-    fig = go.Figure(
-        go.Bar(
-            x=demo["Driver"],
-            y=demo["Win probability"],
-            marker_color=FERRARI_RED,
-            text=[f"{value * 100:.0f}%" for value in demo["Win probability"]],
-            textposition="outside",
-        )
-    )
-    fig.update_layout(title="Live probability snapshot", yaxis_title="Probability", xaxis_title="Driver")
+    fig = px.bar(board, x="Driver", y="Win probability", color="Expected position", title="Synthetic prediction snapshot")
     chart(fig)
 
-st.subheader("Open the workspaces")
-st.info(
-    "Use the Streamlit sidebar to open: Telemetry Lab, Strategy Lab, Race Engineer AI and Live Timing Demo. "
-    "For Streamlit Cloud, set the main file to streamlit_app.py or f1_elite_upgrade/app/Home.py."
-)
-
-panel(
-    "Scientific limitation",
-    "The demo outputs are transparent engineering examples. They are not official F1 team data and should be treated as reproducible modelling assumptions until calibrated with public data.",
-)
+st.info("Use the sidebar pages to open the full platform modules. Synthetic demo outputs are clearly labelled; real public-data integrations require configured data sources.")
