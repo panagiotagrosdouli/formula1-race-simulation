@@ -20,7 +20,7 @@ The repository-root `streamlit_app.py` is kept as a compatibility fallback, but 
 
 ## Product direction
 
-F1Sim Pro is designed as a Formula 1-style AI engineering and race intelligence platform, not a simple demo dashboard. The app is organized as a race-weekend command center with dedicated workspaces for prediction, simulation, strategy, telemetry, tyres, weather, drivers, teams, tracks, championship scenarios, model performance and reports.
+F1Sim Pro is designed as a Formula 1-style AI engineering and race intelligence platform, not a simple demo dashboard. The app is organized as a race-weekend command center with dedicated workspaces for replay, prediction, simulation, strategy, telemetry, tyres, weather, drivers, teams, tracks, championship scenarios, model performance and reports.
 
 ## Pages
 
@@ -42,10 +42,11 @@ F1Sim Pro is designed as a Formula 1-style AI engineering and race intelligence 
 - `15_Reproducibility_Settings.py` — seeds, configs, data policy and roadmap
 - `16_Championship_Center.py` — driver and constructor title scenario workspace
 - `17_Model_Performance.py` — validation, calibration and explainability workspace
+- `18_Race_Replay_Studio.py` — replay-style circuit visualizer, timing wall, tyre status and safety-car state
 
 ## Data honesty
 
-The app never claims private Formula 1 team data. Synthetic examples are labelled as prototype/demo values. Public data integrations such as FastF1/OpenF1 are scaffolds unless explicitly configured and cited.
+The app never claims private Formula 1 team data. Synthetic examples are labelled as prototype/demo values. Public data integrations such as FastF1/OpenF1 are scaffolds unless explicitly configured and cited. The Race Replay Studio currently derives car positions from simulation state and gap progression; public positional telemetry can be connected in a later phase when available and permitted.
 
 ## Engineering standards
 
