@@ -3,7 +3,11 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-import fastf1
+try:
+    import fastf1
+except ImportError:  # pragma: no cover - optional telemetry dependency
+    fastf1 = None
+
 import numpy as np
 import pandas as pd
 import plotly.express as px
@@ -21,8 +25,44 @@ class TireDegradationResult:
 
 
 def enable_fastf1_cache(cache_dir: Path = CACHE_DIR) -> None:
+    if fastf1 is None:
+        raise RuntimeError("FastF1 is not installed. Install fastf1 to load public session telemetry.")
     cache_dir.mkdir(parents=True, exist_ok=True)
     fastf1.Cache.enable_cache(str(cache_dir))
+
+
+def _demo_tire_degradation(driver: str) -> TireDegradationResult:
+    rows = []
+    for lap in range(1, 19):
+        tyre_life = lap
+        compound = "MEDIUM" if lap <= 10 else "HARD"
+        base = 91.2 if compound == "MEDIUM" else 91.8
+        lap_time = base + 0.045 * tyre_life + 0.0012 * tyre_life**2
+        rows.append(
+            {
+                "Driver": driver,
+                "LapNumber": float(lap),
+                "LapTimeSeconds": lap_time,
+                "TyreLife": float(tyre_life),
+                "Compound": compound,
+                "Stint": "Demo",
+            }
+        )
+    df = pd.DataFrame(rows)
+    model = LinearRegression()
+    model.fit(df[["TyreLife"]], df["LapTimeSeconds"])
+    df["PredictedLapTimeSeconds"] = model.predict(df[["TyreLife"]])
+    compound_summary = (
+        df.groupby("Compound", as_index=False)
+        .agg(
+            Laps=("LapNumber", "count"),
+            MeanLapTime=("LapTimeSeconds", "mean"),
+            MeanTyreLife=("TyreLife", "mean"),
+            BestLapTime=("LapTimeSeconds", "min"),
+        )
+        .round(3)
+    )
+    return TireDegradationResult(driver, float(model.coef_[0]), compound_summary, df.reset_index(drop=True))
 
 
 def load_tire_degradation(
@@ -31,12 +71,15 @@ def load_tire_degradation(
     session_type: str = "R",
     driver: str = "VER",
 ) -> TireDegradationResult:
-    """Estimate tire degradation from real FastF1 lap data.
+    """Estimate tyre degradation from public FastF1 lap data or a labelled demo fallback.
 
-    The model uses valid racing laps with known tyre life and fits a simple linear
-    relationship between tyre age and lap time. The slope is interpreted as
-    seconds lost per additional lap on the tyre.
+    The FastF1 path uses public timing data. If FastF1 is not installed, a synthetic demo
+    fallback is returned so dashboard imports and smoke tests remain lightweight. The fallback
+    is clearly not official team data.
     """
+
+    if fastf1 is None:
+        return _demo_tire_degradation(driver)
 
     enable_fastf1_cache()
     session = fastf1.get_session(year, grand_prix, session_type)
@@ -59,7 +102,6 @@ def load_tire_degradation(
         }
     )
 
-    # Remove obvious non-representative laps such as safety-car, in/out or severe traffic laps.
     median_lap = df["LapTimeSeconds"].median()
     df = df[df["LapTimeSeconds"] < median_lap + 5].copy()
 
@@ -116,4 +158,14 @@ def detect_tire_cliff(result: TireDegradationResult) -> pd.DataFrame:
     threshold = max(1.0, float(np.nanstd(residual)) * 1.25)
     df["ResidualSeconds"] = residual.round(3)
     df["PotentialCliff"] = df["ResidualSeconds"] > threshold
-    return df[["LapNumber", "Compound", "TyreLife", "LapTimeSeconds", "PredictedLapTimeSeconds", "ResidualSeconds", "PotentialCliff"]]
+    return df[
+        [
+            "LapNumber",
+            "Compound",
+            "TyreLife",
+            "LapTimeSeconds",
+            "PredictedLapTimeSeconds",
+            "ResidualSeconds",
+            "PotentialCliff",
+        ]
+    ]
