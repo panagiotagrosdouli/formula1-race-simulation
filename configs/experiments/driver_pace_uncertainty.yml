@@ -1,0 +1,27 @@
+name: driver_pace_uncertainty
+seed: 1222
+laps: 58
+pit_loss_s: 22.0
+safety_car_pit_loss_multiplier: 0.62
+fuel_start_kg: 100.0
+fuel_burn_kg_per_lap: 1.7
+track_temp_c: 35.0
+air_temp_c: 25.0
+rain_probability: 0.05
+safety_car_probability_per_lap: 0.02
+vsc_probability_per_lap: 0.03
+output_dir: results/driver_pace_uncertainty
+drivers:
+  - driver_id: FAST_VOLATILE
+    base_pace_s: 91.25
+    start_position: 1
+  - driver_id: STABLE
+    base_pace_s: 91.45
+    start_position: 2
+strategies:
+  - driver_id: FAST_VOLATILE
+    compounds: [soft, medium, hard]
+    pit_laps: [18, 39]
+  - driver_id: STABLE
+    compounds: [medium, hard]
+    pit_laps: [30]
