@@ -1,0 +1,27 @@
+name: undercut_scenario
+seed: 1020
+laps: 54
+pit_loss_s: 21.8
+safety_car_pit_loss_multiplier: 0.62
+fuel_start_kg: 96.0
+fuel_burn_kg_per_lap: 1.75
+track_temp_c: 36.0
+air_temp_c: 25.0
+rain_probability: 0.03
+safety_car_probability_per_lap: 0.015
+vsc_probability_per_lap: 0.025
+output_dir: results/undercut_scenario
+drivers:
+  - driver_id: LEADER
+    base_pace_s: 90.80
+    start_position: 1
+  - driver_id: UNDERCUT
+    base_pace_s: 90.82
+    start_position: 2
+strategies:
+  - driver_id: LEADER
+    compounds: [medium, hard]
+    pit_laps: [29]
+  - driver_id: UNDERCUT
+    compounds: [medium, hard]
+    pit_laps: [25]
