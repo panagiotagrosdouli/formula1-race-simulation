@@ -19,7 +19,12 @@ export default function Home() {
     queryFn: getHealth,
     retry: 1,
   });
-  const backendStatus = isLoading ? 'CHECKING' : error ? 'OFFLINE' : health?.status?.toUpperCase() || 'UNKNOWN';
+  const backendStatus = isLoading
+    ? 'CHECKING'
+    : error
+      ? 'DEMO'
+      : health?.status?.toUpperCase() || 'DEMO';
+  const serviceLabel = health?.demo ? 'Frontend demo fallback' : health?.service || 'FastAPI service';
 
   return (
     <div className="space-y-6">
@@ -28,10 +33,10 @@ export default function Home() {
         <div className="relative">
           <div className="text-[11px] font-semibold tracking-[0.28em] uppercase text-white/45 font-mono-f1">Executive Overview</div>
           <h1 className="font-display text-4xl md:text-5xl font-extrabold tracking-tight mt-3">APEX Race Engineering</h1>
-          <p className="text-white/45 mt-3 max-w-3xl">Professional Formula 1 race strategy, telemetry, simulation and probability intelligence built to connect with the existing FastAPI engineering backend.</p>
+          <p className="text-white/45 mt-3 max-w-3xl">Professional Formula 1 race strategy, telemetry, simulation and probability intelligence. The frontend now renders in demo mode even before the FastAPI backend is connected.</p>
           <div className="grid md:grid-cols-4 gap-4 mt-8">
-            <Stat label="Backend" value={backendStatus} sub={health?.service || 'FastAPI service'} accent={!error && !isLoading} />
-            <Stat label="Race confidence" value="87%" sub="calibrated model status" accent />
+            <Stat label="Backend" value={backendStatus} sub={serviceLabel} accent={!isLoading} />
+            <Stat label="Race confidence" value="87%" sub="demo model status" accent />
             <Stat label="Simulations" value="2,500" sub="Monte Carlo baseline" />
             <Stat label="Predicted winner" value="LEC" sub="demo display pending full API wiring" />
           </div>
