@@ -1,12 +1,4 @@
-"""Streamlit entrypoint for the Formula 1 Race Simulation Engineering Platform.
-
-Run locally with:
-    streamlit run app/f1_analytics_platform.py
-
-This app is intentionally lightweight at startup so Streamlit Cloud can boot reliably.
-It uses the repository's `f1sim` simulation package and avoids training heavy ML models during
-initial page load.
-"""
+"""Streamlit app for the Formula 1 Race Simulation Engineering Platform."""
 
 from __future__ import annotations
 
@@ -30,12 +22,15 @@ CONFIG_DIR = ROOT / "configs" / "experiments"
 DEFAULT_CONFIG = CONFIG_DIR / "dry_race.yml"
 
 
-st.set_page_config(
-    page_title="F1 Race Simulation Engineering",
-    page_icon="🏁",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
+def configure_page() -> None:
+    """Configure Streamlit once per script execution."""
+
+    st.set_page_config(
+        page_title="F1 Race Simulation Engineering",
+        page_icon="🏁",
+        layout="wide",
+        initial_sidebar_state="expanded",
+    )
 
 
 @st.cache_data(show_spinner=False)
@@ -48,24 +43,25 @@ def available_configs() -> list[str]:
 
 
 @st.cache_data(show_spinner=False)
-def load_config(config_path: str) -> RaceConfig:
-    """Load a race config with Streamlit caching."""
+def load_config(config_path: str, seed: int) -> RaceConfig:
+    """Load a race config with a user-selected seed."""
 
-    return load_race_config(ROOT / config_path)
+    config = load_race_config(ROOT / config_path)
+    return config.model_copy(update={"seed": int(seed)})
 
 
 @st.cache_data(show_spinner=True)
-def run_race(config_path: str) -> RaceResult:
+def run_race(config_path: str, seed: int) -> RaceResult:
     """Run one deterministic race simulation."""
 
-    return RaceSimulation(load_config(config_path)).run()
+    return RaceSimulation(load_config(config_path, seed)).run()
 
 
 @st.cache_data(show_spinner=True)
 def run_monte_carlo(config_path: str, runs: int, seed: int) -> MonteCarloSummary:
     """Run Monte Carlo simulation for the selected config."""
 
-    config = load_config(config_path).model_copy(update={"seed": int(seed)})
+    config = load_config(config_path, seed)
     return MonteCarloSimulation(config, runs=int(runs), seed=int(seed)).run()
 
 
@@ -110,8 +106,7 @@ def render_header() -> None:
         "weather uncertainty, safety-car scenarios and Monte Carlo strategy risk."
     )
     st.info(
-        "This platform uses transparent open-model assumptions. It does not claim access to "
-        "private team data and should not be interpreted as official Formula 1 telemetry."
+        "Transparent open-model assumptions only. No private team data and no official F1 telemetry claims."
     )
 
 
@@ -129,10 +124,10 @@ def render_sidebar() -> tuple[str, int, int]:
         configs,
         index=configs.index(default) if default in configs else 0,
     )
-    monte_carlo_runs = st.sidebar.slider("Monte Carlo runs", 10, 1000, 100, step=10)
+    monte_carlo_runs = st.sidebar.slider("Monte Carlo runs", 10, 300, 50, step=10)
     seed = st.sidebar.number_input("Random seed", min_value=1, max_value=999999, value=42)
     st.sidebar.markdown("---")
-    st.sidebar.caption("Change the YAML config to compare dry, wet and strategy-risk scenarios.")
+    st.sidebar.caption("Use YAML configs to compare dry, wet and strategy-risk scenarios.")
     return selected_config, int(monte_carlo_runs), int(seed)
 
 
@@ -163,11 +158,11 @@ def render_classification(result: RaceResult) -> None:
             {
                 "Position": driver.position,
                 "Driver": driver.driver_id,
-                "TotalTime": format_time(driver.total_time_s),
-                "GapToLeaderSeconds": round(driver.total_time_s - leader_time, 3),
-                "PitStops": driver.pit_stops,
-                "FinalCompound": driver.compound,
-                "TrafficLossSeconds": round(driver.traffic_loss_s, 3),
+                "Total time": format_time(driver.total_time_s),
+                "Gap to leader [s]": round(driver.total_time_s - leader_time, 3),
+                "Pit stops": driver.pit_stops,
+                "Final compound": driver.compound,
+                "Traffic loss [s]": round(driver.traffic_loss_s, 3),
             }
         )
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
@@ -181,7 +176,7 @@ def render_charts(frame: pd.DataFrame) -> None:
         return
 
     tab_laps, tab_positions, tab_weather, tab_stints = st.tabs(
-        ["Lap time", "Position", "Weather / neutralisation", "Tyres"]
+        ["Lap time", "Position", "Weather / SC", "Tyres"]
     )
 
     with tab_laps:
@@ -191,7 +186,6 @@ def render_charts(frame: pd.DataFrame) -> None:
             y="LapTimeSeconds",
             color="Driver",
             title="Lap-time evolution",
-            markers=False,
         )
         st.plotly_chart(fig, use_container_width=True)
 
@@ -215,7 +209,11 @@ def render_charts(frame: pd.DataFrame) -> None:
         )
         fig = px.line(weather, x="Lap", y="Wetness", title="Track wetness")
         st.plotly_chart(fig, use_container_width=True)
-        st.dataframe(weather[weather["SafetyCar"] | weather["VSC"]], use_container_width=True, hide_index=True)
+        neutralised = weather[weather["SafetyCar"] | weather["VSC"]]
+        if neutralised.empty:
+            st.success("No SC/VSC laps in this seeded run.")
+        else:
+            st.dataframe(neutralised, use_container_width=True, hide_index=True)
 
     with tab_stints:
         stint_frame = frame[["Lap", "Driver", "Compound", "TyreAge", "PitStops"]].copy()
@@ -240,7 +238,7 @@ def render_monte_carlo(config_path: str, runs: int, seed: int) -> None:
     c1.metric("Runs", summary.runs)
     c2.metric("Expected race time", format_time(summary.expected_time_s))
     c3.metric(
-        "90% interval",
+        "Confidence interval",
         f"{summary.confidence_interval_s[0]:.1f}s – {summary.confidence_interval_s[1]:.1f}s",
     )
     st.json(summary.strategy_risk_profile)
@@ -249,12 +247,13 @@ def render_monte_carlo(config_path: str, runs: int, seed: int) -> None:
 def main() -> None:
     """Render the Streamlit app."""
 
+    configure_page()
     render_header()
     config_path, mc_runs, seed = render_sidebar()
 
     try:
-        config = load_config(config_path).model_copy(update={"seed": seed})
-        result = RaceSimulation(config).run()
+        config = load_config(config_path, seed)
+        result = run_race(config_path, seed)
     except Exception as exc:
         st.error("The selected simulation config could not be executed.")
         st.exception(exc)
@@ -274,10 +273,4 @@ def main() -> None:
     if st.button("Run Monte Carlo risk analysis", type="primary"):
         render_monte_carlo(config_path, mc_runs, seed)
 
-    st.caption(
-        "F1Sim platform • reproducible YAML experiments • transparent assumptions • estimates, not guarantees."
-    )
-
-
-if __name__ == "__main__":
-    main()
+    st.caption("F1Sim • reproducible YAML experiments • estimates, not guarantees.")
