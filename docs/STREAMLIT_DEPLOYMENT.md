@@ -1,18 +1,30 @@
 # Streamlit Deployment Guide
 
-## Primary entrypoint
+## Primary multipage entrypoint
 
-Use the repository-root entrypoint:
+For the full F1Sim Pro multipage application, use:
 
 ```bash
-streamlit run streamlit_app.py
+streamlit run f1_elite_upgrade/app/Home.py
 ```
 
 For Streamlit Community Cloud, set:
 
 ```text
-Main file path: streamlit_app.py
+Main file path: f1_elite_upgrade/app/Home.py
 ```
+
+This is the recommended deployment path because Streamlit discovers pages from the `pages/` directory next to `Home.py`.
+
+## Root fallback entrypoint
+
+The repository root also contains:
+
+```bash
+streamlit run streamlit_app.py
+```
+
+This is kept as a compatibility fallback, but the direct `f1_elite_upgrade/app/Home.py` entrypoint is preferred for full multipage sidebar discovery.
 
 ## Recommended Python setup
 
@@ -20,43 +32,50 @@ Main file path: streamlit_app.py
 python -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-streamlit run streamlit_app.py
+streamlit run f1_elite_upgrade/app/Home.py
 ```
 
 ## What should appear
 
-The deployed app should open as a dark Formula 1 engineering cockpit with sidebar navigation and these sections:
+The deployed app should open as a dark Formula 1-style race intelligence platform with sidebar navigation and these workspaces:
 
-- Platform Overview
-- Race Simulation Dashboard
-- Tyre Engineering
-- Fuel Model
-- Weather Model
-- Safety Car / VSC
+- Home command center
+- Telemetry Lab
 - Strategy Lab
-- Monte Carlo Lab
-- Telemetry & Data
-- Engineering Report
-- About / Reproducibility
+- Race Engineer AI
+- Live Timing Demo
+- Race Control
+- Prediction Center
+- Tyre Lab
+- Driver Database
+- Team Database
+- Track Database
+- Report Center
 
 ## Data and telemetry behaviour
 
-The core Streamlit app does not require private or official F1 team data. YAML experiments are synthetic/example scenarios. CSV upload supports user-provided lap-time data. FastF1/OpenF1 are integration scaffolds and must be treated as public-data sources when enabled.
+The app does not require private or official Formula 1 team data. YAML experiments are synthetic/example scenarios. CSV upload supports user-provided lap-time data. FastF1/OpenF1 are integration scaffolds and must be treated as public-data sources when enabled.
 
 ## Troubleshooting
 
+### Sidebar pages do not appear
+
+Make sure the Streamlit Cloud main file path is:
+
+```text
+f1_elite_upgrade/app/Home.py
+```
+
+If you deploy `streamlit_app.py`, the app may open but Streamlit may not discover the nested `pages/` directory automatically.
+
 ### ImportError: fastf1
 
-FastF1 is optional for CI and lightweight app startup. Legacy telemetry modules now use synthetic fallbacks when FastF1 is not installed. If real public session telemetry is needed, install FastF1 explicitly.
+FastF1 is optional for CI and lightweight app startup. Legacy telemetry modules use synthetic fallbacks when FastF1 is not installed. If real public session telemetry is needed, install FastF1 explicitly.
 
 ### No YAML configs found
 
 Ensure `configs/experiments/` exists and contains `.yml` experiment files.
 
-### App looks plain
-
-Confirm `.streamlit/config.toml` is committed and Streamlit is launching from the repository root.
-
 ## Quality target
 
-The app should feel like a serious race engineering interface: dark, fast, technical, reproducible and transparent about uncertainty and limitations.
+The app should feel like a serious Formula 1 operating system: dark, fast, technical, reproducible and transparent about uncertainty and limitations.
