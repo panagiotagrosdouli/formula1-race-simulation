@@ -25,12 +25,14 @@ def make_demo(config_path: str = "configs/experiments/dry_race.yml") -> None:
     Path("results/videos").mkdir(parents=True, exist_ok=True)
 
     fig, ax = plt.subplots(figsize=(10, 5))
-    drivers = list(frame["driver_id"].unique())
 
     def update(lap: int):
         ax.clear()
         lap_frame = frame[frame["lap"] == lap].sort_values("position")
-        labels = [f"{row.driver_id} | P{int(row.position)} | {row.compound}" for row in lap_frame.itertuples()]
+        labels = [
+            f"{row.driver_id} | P{int(row.position)} | {row.compound}"
+            for row in lap_frame.itertuples()
+        ]
         ax.barh(labels, lap_frame["gap_to_leader_s"])
         ax.invert_yaxis()
         sc = bool(lap_frame["safety_car"].any()) if not lap_frame.empty else False
@@ -39,7 +41,12 @@ def make_demo(config_path: str = "configs/experiments/dry_race.yml") -> None:
         ax.set_title(f"Lap {lap}/{config.laps} | wetness={wetness:.2f} | SC={sc} | VSC={vsc}")
         ax.set_xlabel("Gap to leader [s]")
         ax.set_xlim(0, max(5.0, frame["gap_to_leader_s"].max() + 2.0))
-        ax.text(0.02, 0.02, "Pit stops, tyres, weather and race outcome from f1sim code", transform=ax.transAxes)
+        ax.text(
+            0.02,
+            0.02,
+            "Pit stops, tyres, weather and race outcome from f1sim code",
+            transform=ax.transAxes,
+        )
         return ax
 
     anim = animation.FuncAnimation(fig, update, frames=range(1, config.laps + 1), interval=180)
